@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Tracker Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        h1 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task Tracker Report</h1>
+    <p>Dear <span th:text="${userName}">User</span>,</p>
+    <p>Here is your report for the specified period:</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Task Name</th>
+                <th>Status</th>
+                <th>Time Spent</th>
+                <th>Created On</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="task : ${tasks}">
+                <td th:text="${task.name}">Task Name</td>
+                <td th:text="${task.status}">Status</td>
+                <td th:text="${task.timeSpent}">Time Spent</td>
+                <td th:text="${task.createdOn}">Created On</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p>Thank you for using Task Tracker!</p>
+</body>
+</html>

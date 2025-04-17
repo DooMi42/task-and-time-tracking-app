@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Notification</title>
+</head>
+<body>
+    <h1>Task Notification</h1>
+    <p>Hello, <span th:text="${userName}">User</span>!</p>
+    <p>You have a new task notification:</p>
+    <p><strong>Task Title:</strong> <span th:text="${taskTitle}">Task Title</span></p>
+    <p><strong>Description:</strong> <span th:text="${taskDescription}">Task Description</span></p>
+    <p><strong>Due Date:</strong> <span th:text="${dueDate}">Due Date</span></p>
+    <p>Thank you for using our task tracker application!</p>
+</body>
+</html>
