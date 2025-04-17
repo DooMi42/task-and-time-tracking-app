@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -178,13 +178,27 @@ public class TimeEntryServiceImpl implements TimeEntryService {
 
     @Override
     public TimeEntryDto createTimeEntry(TimeEntryDto timeEntryDto) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'createTimeEntry'");
+        User currentUser = userService.getCurrentUser();
+        Task task = taskRepository.findById(timeEntryDto.getTaskId())
+                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + timeEntryDto.getTaskId()));
+
+        TimeEntry timeEntry = TimeEntry.builder()
+                .task(task)
+                .user(currentUser)
+                .startTime(timeEntryDto.getStartTime())
+                .endTime(timeEntryDto.getEndTime())
+                .description(timeEntryDto.getDescription())
+                .build();
+
+        TimeEntry savedEntry = timeEntryRepository.save(timeEntry);
+        return mapToDto(savedEntry);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TimeEntryDto> getAllTimeEntries() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAllTimeEntries'");
+        return timeEntryRepository.findAll().stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
     }
 }
