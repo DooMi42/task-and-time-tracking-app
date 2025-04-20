@@ -1,7 +1,6 @@
 package com.tasktracker.config;
 
 import com.zaxxer.hikari.HikariDataSource;
-import jakarta.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,9 +18,18 @@ public class DatabaseConfig {
     @Value("${DATABASE_URL:#{null}}")
     private String databaseUrl;
 
+    @Value("${spring.datasource.url}")
+    private String jdbcUrl;
+
+    @Value("${spring.datasource.username}")
+    private String username;
+
+    @Value("${spring.datasource.password}")
+    private String password;
+
     @Bean
     @Primary
-    public DataSource dataSource() {
+    public HikariDataSource dataSource() {
         logger.info("DATABASE_URL from environment: {}",
                 databaseUrl != null ? databaseUrl.replaceAll(":[^:@]+@", ":******@") : "null");
 
@@ -32,28 +40,27 @@ public class DatabaseConfig {
             try {
                 URI dbUri = new URI(databaseUrl);
 
-                String username = dbUri.getUserInfo().split(":")[0];
-                String password = dbUri.getUserInfo().split(":")[1];
-                String jdbcUrl = "jdbc:postgresql://" + dbUri.getHost() +
+                String dbUsername = dbUri.getUserInfo().split(":")[0];
+                String dbPassword = dbUri.getUserInfo().split(":")[1];
+                String convertedUrl = "jdbc:postgresql://" + dbUri.getHost() +
                         (dbUri.getPort() == -1 ? "" : ":" + dbUri.getPort()) +
                         dbUri.getPath();
 
-                logger.info("Converted JDBC URL: {}", jdbcUrl.replaceAll("password=.*?(&|$)", "password=****$1"));
+                logger.info("Converted JDBC URL: {}", convertedUrl.replaceAll("password=.*?(&|$)", "password=****$1"));
 
-                dataSource.setJdbcUrl(jdbcUrl);
-                dataSource.setUsername(username);
-                dataSource.setPassword(password);
+                dataSource.setJdbcUrl(convertedUrl);
+                dataSource.setUsername(dbUsername);
+                dataSource.setPassword(dbPassword);
             } catch (URISyntaxException e) {
                 logger.error("Failed to parse DATABASE_URL", e);
                 throw new RuntimeException("Invalid DATABASE_URL", e);
             }
         } else {
-            // Fall back to application properties if no DATABASE_URL
-            logger.info("Using application properties for database connection");
-            // These will be injected from properties by Spring Boot
-            dataSource.setJdbcUrl("${spring.datasource.url}");
-            dataSource.setUsername("${spring.datasource.username}");
-            dataSource.setPassword("${spring.datasource.password}");
+            // Fall back to application properties
+            logger.info("Using application properties JDBC URL: {}", jdbcUrl);
+            dataSource.setJdbcUrl(jdbcUrl);
+            dataSource.setUsername(username);
+            dataSource.setPassword(password);
         }
 
         dataSource.setDriverClassName("org.postgresql.Driver");
