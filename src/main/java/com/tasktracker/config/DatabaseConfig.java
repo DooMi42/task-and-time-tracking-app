@@ -22,6 +22,9 @@ import java.util.Properties;
 public class DatabaseConfig {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseConfig.class);
 
+    @Value("${JDBC_DATABASE_URL:#{null}}")
+    private String jdbcDatabaseUrl;
+
     @Value("${DATABASE_URL:#{null}}")
     private String databaseUrl;
 
@@ -33,6 +36,12 @@ public class DatabaseConfig {
 
     @Value("${spring.datasource.password}")
     private String password;
+
+    @Value("${JDBC_DATABASE_USERNAME:#{null}}")
+    private String jdbcUsername;
+
+    @Value("${JDBC_DATABASE_PASSWORD:#{null}}")
+    private String jdbcPassword;
 
     private final Environment environment;
 
@@ -48,8 +57,16 @@ public class DatabaseConfig {
 
         HikariDataSource dataSource = new HikariDataSource();
 
-        // Check if we need to convert the Render-style URL
-        if (databaseUrl != null && databaseUrl.startsWith("postgresql://")) {
+        // Use JDBC_DATABASE_URL from Render if available
+        if (jdbcDatabaseUrl != null) {
+            logger.info("Using JDBC_DATABASE_URL");
+            dataSource.setJdbcUrl(jdbcDatabaseUrl);
+            dataSource.setUsername(jdbcUsername != null ? jdbcUsername : username);
+            dataSource.setPassword(jdbcPassword != null ? jdbcPassword : password);
+            dataSource.setDriverClassName("org.postgresql.Driver");
+        }
+        // Fall back to DATABASE_URL parsing
+        else if (databaseUrl != null && databaseUrl.startsWith("postgresql://")) {
             try {
                 URI dbUri = new URI(databaseUrl);
 
