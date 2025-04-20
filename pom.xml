@@ -26,14 +26,10 @@
     <!-- target Java version -->
     <java.version>21</java.version>
     <!-- Testing -->
-    <junit.version>5.12.2</junit.version> <!-- latest GA Apr 11, 2025 :contentReference[oaicite:1]{index=1} -->
-    <!-- JWT support -->
-    <jjwt.version>0.11.5</jjwt.version>  <!-- latest patch release Jun 21, 2024 :contentReference[oaicite:2]{index=2} -->
-    <!-- Lombok for annotation processing -->
-    <lombok.version>1.18.30</lombok.version> <!-- adds full JDK 21 support :contentReference[oaicite:3]{index=3} -->
-    <!-- CSV export -->
-    <opencsv.version>5.10</opencsv.version> <!-- released Jan 12, 2025 :contentReference[oaicite:4]{index=4} -->
-    <!-- default encoding -->
+    <junit.version>5.12.2</junit.version>
+    <jjwt.version>0.11.5</jjwt.version>
+    <lombok.version>1.18.30</lombok.version>
+    <opencsv.version>5.10</opencsv.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 

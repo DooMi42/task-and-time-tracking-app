@@ -86,12 +86,17 @@ public class JwtTokenUtil {
         }
     }
 
-    private Boolean isTokenExpired(String token) {
+    Boolean isTokenExpired(String token) {
         try {
             Date expiration = extractClaim(token, Claims::getExpiration);
             return expiration.before(new Date());
         } catch (ExpiredJwtException e) {
             return true;
         }
+    }
+
+    public Key getSecretKey() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getSecretKey'");
     }
 }
