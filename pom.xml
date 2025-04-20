@@ -33,6 +33,17 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
+  <dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.2</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <!-- Spring Boot Starters (no explicit versions—managed by parent BOM) -->
     <dependency>
@@ -126,7 +137,13 @@
     <dependency>
       <groupId>com.itextpdf</groupId>
       <artifactId>itextpdf</artifactId>
-      <version>5.5.13.3</version> <!-- latest 5.x release -->
+      <version>5.5.13.3</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Testing -->
