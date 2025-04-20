@@ -46,6 +46,10 @@ public class Task {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private Project project;
+
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TimeEntry> timeEntries = new HashSet<>();
 
