@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: task-tracker
+    env: docker
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -jar target/task-tracker-*.jar --spring.profiles.active=render
+    envVars:
+      - key: JDBC_DATABASE_URL
+        fromDatabase:
+          name: task-tracker-db
+          property: connectionString
+      - key: JDBC_DATABASE_USERNAME
+        fromDatabase:
+          name: task-tracker-db
+          property: user
+      - key: JDBC_DATABASE_PASSWORD
+        fromDatabase:
+          name: task-tracker-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SPRING_PROFILES_ACTIVE
+        value: render
+
+databases:
+  - name: task-tracker-db
+    plan: free
