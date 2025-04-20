@@ -1,12 +1,12 @@
 # Build stage
-FROM maven:3.9.0-amazoncorretto-21 AS build
+FROM maven:4.0.0-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 RUN mvn package -DskipTests
 
 # Runtime stage
-FROM amazoncorretto:21-alpine
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
