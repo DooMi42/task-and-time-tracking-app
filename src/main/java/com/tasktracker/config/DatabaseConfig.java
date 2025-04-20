@@ -54,6 +54,8 @@ public class DatabaseConfig {
     public HikariDataSource dataSource() {
         logger.info("DATABASE_URL from environment: {}",
                 databaseUrl != null ? databaseUrl.replaceAll(":[^:@]+@", ":******@") : "null");
+        logger.info("JDBC_DATABASE_URL from environment: {}",
+                jdbcDatabaseUrl != null ? jdbcDatabaseUrl.replaceAll(":[^:@]+@", ":******@") : "null");
 
         HikariDataSource dataSource = new HikariDataSource();
 
@@ -133,10 +135,15 @@ public class DatabaseConfig {
     }
 
     private String determineDialect() {
-        if (jdbcUrl.startsWith("jdbc:h2:")) {
+        if (jdbcUrl != null && jdbcUrl.startsWith("jdbc:h2:")) {
             return "org.hibernate.dialect.H2Dialect";
+        } else if (jdbcDatabaseUrl != null ||
+                (databaseUrl != null && databaseUrl.startsWith("postgresql://"))) {
+            // Don't set dialect for PostgreSQL - let Hibernate detect it
+            return null;
         } else {
-            return "org.hibernate.dialect.PostgreSQLDialect";
+            // Default case
+            return null;
         }
     }
 
