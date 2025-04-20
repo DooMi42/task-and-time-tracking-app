@@ -1,14 +1,18 @@
-# Use standard OpenJDK image instead of Eclipse Temurin
-FROM openjdk:21-slim
+# Build stage
+FROM maven:3.9.0-amazoncorretto-21 AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn package -DskipTests
 
-# Create a volume for temporary files
-VOLUME /tmp
-
-# Copy the JAR file
-COPY target/task-tracker-*.jar app.jar
-
-# Expose the port that your application runs on
+# Runtime stage
+FROM amazoncorretto:21-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 
-# Start the application
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app.jar"]
+# Configure JVM for container environment
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
+# Use exec form of ENTRYPOINT for proper signal handling
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
