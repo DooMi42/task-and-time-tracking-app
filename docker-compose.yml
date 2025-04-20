@@ -9,26 +9,22 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: dev
-      DATABASE_URL: jdbc:postgresql://db:5432/task_tracker
-      DATABASE_USERNAME: postgres
-      DATABASE_PASSWORD: password
+      - SPRING_PROFILES_ACTIVE=prod
     depends_on:
       - db
     networks:
       - task-tracker-network
 
   db:
-    image: postgres:16
-    restart: always
+    image: postgres:15
     environment:
-      POSTGRES_DB: task_tracker
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - task-tracker-network
 
@@ -37,5 +33,4 @@ networks:
     driver: bridge
 
 volumes:
-  db_data:
-    driver: local
+  postgres-data:

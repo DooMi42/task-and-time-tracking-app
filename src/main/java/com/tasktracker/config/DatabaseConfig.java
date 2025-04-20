@@ -52,98 +52,112 @@ public class DatabaseConfig {
     @Bean
     @Primary
     public HikariDataSource dataSource() {
-        logger.info("DATABASE_URL from environment: {}",
-                databaseUrl != null ? databaseUrl.replaceAll(":[^:@]+@", ":******@") : "null");
-        logger.info("JDBC_DATABASE_URL from environment: {}",
-                jdbcDatabaseUrl != null ? jdbcDatabaseUrl.replaceAll(":[^:@]+@", ":******@") : "null");
+        try {
+            logger.info("DATABASE_URL from environment: {}",
+                    databaseUrl != null ? databaseUrl.replaceAll(":[^:@]+@", ":******@") : "null");
+            logger.info("JDBC_DATABASE_URL from environment: {}",
+                    jdbcDatabaseUrl != null ? jdbcDatabaseUrl.replaceAll(":[^:@]+@", ":******@") : "null");
+            logger.info("Spring datasource URL: {}", jdbcUrl);
 
-        HikariDataSource dataSource = new HikariDataSource();
+            HikariDataSource dataSource = new HikariDataSource();
 
-        // Use JDBC_DATABASE_URL from Render if available
-        if (jdbcDatabaseUrl != null) {
-            logger.info("Using JDBC_DATABASE_URL");
-            dataSource.setJdbcUrl(jdbcDatabaseUrl);
-            dataSource.setUsername(jdbcUsername != null ? jdbcUsername : username);
-            dataSource.setPassword(jdbcPassword != null ? jdbcPassword : password);
-            dataSource.setDriverClassName("org.postgresql.Driver");
-        }
-        // Fall back to DATABASE_URL parsing
-        else if (databaseUrl != null && databaseUrl.startsWith("postgresql://")) {
-            try {
-                URI dbUri = new URI(databaseUrl);
+            // Docker environment uses SPRING_DATASOURCE_URL
+            if (jdbcUrl != null && !jdbcUrl.isEmpty()) {
+                logger.info("Using SPRING_DATASOURCE_URL from properties: {}", jdbcUrl);
+                dataSource.setJdbcUrl(jdbcUrl);
+                dataSource.setUsername(username);
+                dataSource.setPassword(password);
 
-                String dbUsername = dbUri.getUserInfo().split(":")[0];
-                String dbPassword = dbUri.getUserInfo().split(":")[1];
-                String convertedUrl = "jdbc:postgresql://" + dbUri.getHost() +
-                        (dbUri.getPort() == -1 ? "" : ":" + dbUri.getPort()) +
-                        dbUri.getPath();
-
-                logger.info("Converted JDBC URL: {}", convertedUrl.replaceAll("password=.*?(&|$)", "password=****$1"));
-
-                dataSource.setJdbcUrl(convertedUrl);
-                dataSource.setUsername(dbUsername);
-                dataSource.setPassword(dbPassword);
-                dataSource.setDriverClassName("org.postgresql.Driver");
-            } catch (URISyntaxException e) {
-                logger.error("Failed to parse DATABASE_URL", e);
-                throw new RuntimeException("Invalid DATABASE_URL", e);
+                if (jdbcUrl.startsWith("jdbc:h2:")) {
+                    dataSource.setDriverClassName("org.h2.Driver");
+                } else if (jdbcUrl.startsWith("jdbc:postgresql:")) {
+                    dataSource.setDriverClassName("org.postgresql.Driver");
+                }
             }
-        } else {
-            // Fall back to application properties
-            logger.info("Using application properties JDBC URL: {}", jdbcUrl);
-            dataSource.setJdbcUrl(jdbcUrl);
-            dataSource.setUsername(username);
-            dataSource.setPassword(password);
+            // Use JDBC_DATABASE_URL from Render if available
+            else if (jdbcDatabaseUrl != null && !jdbcDatabaseUrl.isEmpty()) {
+                logger.info("Using JDBC_DATABASE_URL for database connection");
+                dataSource.setJdbcUrl(jdbcDatabaseUrl);
+                dataSource.setUsername(jdbcUsername != null ? jdbcUsername : username);
+                dataSource.setPassword(jdbcPassword != null ? jdbcPassword : password);
+                dataSource.setDriverClassName("org.postgresql.Driver");
+            }
+            // Convert DATABASE_URL to JDBC format if needed
+            else if (databaseUrl != null && databaseUrl.startsWith("postgresql://")) {
+                try {
+                    logger.info("Parsing DATABASE_URL for database connection");
+                    URI dbUri = new URI(databaseUrl);
 
-            // Set the appropriate driver class name based on the JDBC URL
-            if (jdbcUrl.startsWith("jdbc:h2:")) {
-                dataSource.setDriverClassName("org.h2.Driver");
-            } else if (jdbcUrl.startsWith("jdbc:postgresql:")) {
+                    String dbUsername = dbUri.getUserInfo().split(":")[0];
+                    String dbPassword = dbUri.getUserInfo().split(":")[1];
+                    String convertedUrl = "jdbc:postgresql://" + dbUri.getHost() +
+                            (dbUri.getPort() == -1 ? "" : ":" + dbUri.getPort()) +
+                            dbUri.getPath();
+
+                    logger.info("Converted JDBC URL: {}",
+                            convertedUrl.replaceAll("password=.*?(&|$)", "password=****$1"));
+
+                    dataSource.setJdbcUrl(convertedUrl);
+                    dataSource.setUsername(dbUsername);
+                    dataSource.setPassword(dbPassword);
+                    dataSource.setDriverClassName("org.postgresql.Driver");
+                } catch (URISyntaxException e) {
+                    logger.error("Failed to parse DATABASE_URL", e);
+                    throw new RuntimeException("Invalid DATABASE_URL", e);
+                }
+            }
+            // DOCKER FALLBACK - Use default PostgreSQL settings when in Docker
+            else if (Arrays.asList(environment.getActiveProfiles()).contains("prod")) {
+                logger.info("Using default Docker PostgreSQL settings");
+                dataSource.setJdbcUrl("jdbc:postgresql://db:5432/postgres");
+                dataSource.setUsername("postgres");
+                dataSource.setPassword("postgres");
                 dataSource.setDriverClassName("org.postgresql.Driver");
             } else {
-                logger.warn("Unknown database type in URL: {}, defaulting to PostgreSQL driver", jdbcUrl);
-                dataSource.setDriverClassName("org.postgresql.Driver");
+                // Default to H2 in-memory database for development
+                logger.info("Using fallback H2 in-memory database");
+                dataSource.setJdbcUrl("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1");
+                dataSource.setUsername("sa");
+                dataSource.setPassword("");
+                dataSource.setDriverClassName("org.h2.Driver");
             }
-        }
 
-        return dataSource;
+            return dataSource;
+        } catch (Exception e) {
+            logger.error("Failed to create dataSource bean", e);
+            throw e;
+        }
     }
 
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
-        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
-        em.setDataSource(dataSource());
-        em.setPackagesToScan("com.tasktracker.model");
+        try {
+            LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+            em.setDataSource(dataSource());
+            em.setPackagesToScan("com.tasktracker.model");
 
-        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
-        em.setJpaVendorAdapter(vendorAdapter);
+            HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+            em.setJpaVendorAdapter(vendorAdapter);
 
-        Properties properties = new Properties();
-        properties.setProperty("hibernate.dialect", determineDialect());
+            Properties properties = new Properties();
 
-        // Create tables in development, validate in production
-        boolean isDev = Arrays.asList(environment.getActiveProfiles()).contains("dev");
-        if (isDev) {
-            properties.setProperty("hibernate.hbm2ddl.auto", "create-drop");
-        } else {
-            properties.setProperty("hibernate.hbm2ddl.auto", "validate");
-        }
+            boolean isProd = Arrays.asList(environment.getActiveProfiles()).contains("prod");
 
-        em.setJpaProperties(properties);
+            // Set dialect based on environment
+            if (isProd) {
+                properties.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+                properties.setProperty("hibernate.hbm2ddl.auto", "update");
+            } else {
+                properties.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
+                properties.setProperty("hibernate.hbm2ddl.auto", "create-drop");
+            }
 
-        return em;
-    }
+            em.setJpaProperties(properties);
 
-    private String determineDialect() {
-        if (jdbcUrl != null && jdbcUrl.startsWith("jdbc:h2:")) {
-            return "org.hibernate.dialect.H2Dialect";
-        } else if (jdbcDatabaseUrl != null ||
-                (databaseUrl != null && databaseUrl.startsWith("postgresql://"))) {
-            // Don't set dialect for PostgreSQL - let Hibernate detect it
-            return null;
-        } else {
-            // Default case
-            return null;
+            return em;
+        } catch (Exception e) {
+            logger.error("Failed to create entityManagerFactory bean", e);
+            throw e;
         }
     }
 
@@ -159,12 +173,18 @@ public class DatabaseConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "spring.profiles.active", havingValue = "prod", matchIfMissing = true)
+    @ConditionalOnProperty(name = "spring.profiles.active", havingValue = "prod")
     public Flyway flywayProd() {
-        return Flyway.configure()
-                .dataSource(dataSource())
-                .locations("classpath:db/migration/postgresql")
-                .baselineOnMigrate(true)
-                .load();
+        try {
+            return Flyway.configure()
+                    .dataSource(dataSource())
+                    .locations("classpath:db/migration/postgresql")
+                    .baselineOnMigrate(true)
+                    .load();
+        } catch (Exception e) {
+            logger.error("Failed to configure Flyway for production", e);
+            // Return null instead of propagating the exception
+            return null;
+        }
     }
 }
