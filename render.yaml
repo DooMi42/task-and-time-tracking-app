@@ -5,8 +5,9 @@ services:
     env: docker
     plan: free
     dockerfilePath: Dockerfile
-    dockerCommand: >
-      java $JAVA_OPTS -Dspring.profiles.active=render -jar app.jar
+    envVars:
+    - key: SPRING_PROFILES_ACTIVE
+      value: render
     healthCheckPath: /actuator/health
 
 databases:
