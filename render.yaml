@@ -1,18 +1,14 @@
+# render.yaml
 services:
-  # Web service
   - type: web
-    name: task-tracker
+    name: task-and-time-tracking-app
     env: docker
     plan: free
     dockerfilePath: Dockerfile
-    dockerCommand: java $JAVA_OPTS -Dspring.profiles.active=render -jar app.jar
-    envVars:
-      - key: SPRING_PROFILES_ACTIVE
-        value: render
-      - key: JAVA_OPTS
-        value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    dockerCommand: >
+      java $JAVA_OPTS -Dspring.profiles.active=render -jar app.jar
     healthCheckPath: /actuator/health
 
 databases:
-  - name: task-tracker-db
+  - name: task-time-management-db
     plan: free
