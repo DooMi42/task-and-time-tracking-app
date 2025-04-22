@@ -1,26 +1,17 @@
 services:
+  # Web service
   - type: web
     name: task-tracker
     env: docker
-    buildCommand: mvn clean package -DskipTests
-    startCommand: java -jar target/task-tracker-*.jar --spring.profiles.active=render
+    plan: free
+    dockerfilePath: Dockerfile
+    dockerCommand: java $JAVA_OPTS -Dspring.profiles.active=render -jar app.jar
     envVars:
-      - key: JDBC_DATABASE_URL
-        fromDatabase:
-          name: task-tracker-db
-          property: connectionString
-      - key: JDBC_DATABASE_USERNAME
-        fromDatabase:
-          name: task-tracker-db
-          property: user
-      - key: JDBC_DATABASE_PASSWORD
-        fromDatabase:
-          name: task-tracker-db
-          property: password
-      - key: JWT_SECRET
-        generateValue: true
       - key: SPRING_PROFILES_ACTIVE
         value: render
+      - key: JAVA_OPTS
+        value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    healthCheckPath: /actuator/health
 
 databases:
   - name: task-tracker-db
