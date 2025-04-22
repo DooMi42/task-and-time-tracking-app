@@ -1,29 +1,8 @@
 version: '3.8'
 
 services:
-  db:
-    container_name: postgres-db
-    image: postgres:16
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-    volumes:
-      - postgres-data:/var/lib/postgresql/data # Add persistent volume
-    ports:
-      - "5433:5432"
-    networks:
-      - app-network
-    healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "postgres" ] # Simplified healthcheck
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s # Increased start period
-    restart: unless-stopped # Changed restart policy
-
   app:
-    container_name: task-tracker-app
+    image: task-tracker:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -34,16 +13,39 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
+      - WAIT_HOSTS=db:5432
+      - WAIT_HOSTS_TIMEOUT=300
+      - WAIT_SLEEP_INTERVAL=5
+      - WAIT_HOST_CONNECT_TIMEOUT=30
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - app-network
-    restart: on-failure
+      - task-tracker-network
+
+  db:
+    image: postgres:16
+    container_name: db
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - task-tracker-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 networks:
-  app-network:
+  task-tracker-network:
     driver: bridge
 
 volumes:
-  postgres-data: # Define the volume
+  postgres-data:
