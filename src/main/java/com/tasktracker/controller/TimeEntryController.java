@@ -55,86 +55,28 @@ public class TimeEntryController {
         try {
             // Basic validation
             if (request == null || request.getTaskId() == null) {
+                logger.warn("Invalid request: missing task ID");
                 return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Missing required task ID"));
             }
 
-            // Better logging of the incoming request
             logger.info("Creating time entry - taskId: {}, description: {}, startTime: {}, endTime: {}",
                     request.getTaskId(), request.getDescription(), request.getStartTime(), request.getEndTime());
 
-            // Get the task using the repository directly
-            Task task;
-            try {
-                task = taskRepository.findById(request.getTaskId())
-                        .orElseThrow(
-                                () -> new EntityNotFoundException("Task not found with ID: " + request.getTaskId()));
-                logger.info("Found task: {}", task.getId());
-            } catch (EntityNotFoundException e) {
-                logger.error("Task not found: {}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Collections.singletonMap("error", e.getMessage()));
-            }
+            // Create time entry using service
+            TimeEntry timeEntry = timeEntryService.createTimeEntryFromRequest(request);
+            TimeEntry savedEntry = timeEntryService.saveTimeEntry(timeEntry);
 
-            // Parse dates with explicit error handling
-            LocalDateTime startTime;
-            LocalDateTime endTime;
-            try {
-                startTime = parseDateTime(request.getStartTime());
-                endTime = parseDateTime(request.getEndTime());
+            logger.info("Successfully saved time entry with ID: {}", savedEntry.getId());
 
-                // Validate time range
-                if (startTime != null && endTime != null && endTime.isBefore(startTime)) {
-                    logger.error("End time is before start time: {} - {}", startTime, endTime);
-                    return ResponseEntity.badRequest().body(Collections.singletonMap("error",
-                            "End time cannot be before start time"));
-                }
-            } catch (Exception e) {
-                logger.error("Date parsing error: {}", e.getMessage());
-                return ResponseEntity.badRequest().body(Collections.singletonMap("error",
-                        "Invalid date format: " + e.getMessage()));
-            }
-
-            // Get current user
-            User user;
-            try {
-                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                String username = auth.getName();
-                user = userRepository.findByUsername(username)
-                        .orElseThrow(() -> new RuntimeException("User not found: " + username));
-                logger.info("Found user: {}", user.getUsername());
-            } catch (Exception e) {
-                logger.error("User error: {}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Collections.singletonMap("error", "User authentication error: " + e.getMessage()));
-            }
-
-            // Create and save time entry
-            try {
-                TimeEntry timeEntry = new TimeEntry();
-                timeEntry.setTask(task);
-                timeEntry.setUser(user);
-                timeEntry.setDescription(request.getDescription());
-                timeEntry.setStartTime(startTime);
-                timeEntry.setEndTime(endTime);
-
-                TimeEntry savedEntry = timeEntryRepository.save(timeEntry);
-                logger.info("Successfully created time entry with ID: {}", savedEntry.getId());
-
-                // Return success response
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", savedEntry.getId());
-                response.put("message", "Time entry created successfully");
-                return ResponseEntity.ok(response);
-            } catch (Exception e) {
-                logger.error("Error saving time entry: {}", e.getMessage(), e);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Collections.singletonMap("error", "Failed to save time entry: " + e.getMessage()));
-            }
+            // Return a clean response
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", savedEntry.getId());
+            response.put("message", "Time entry created successfully");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            // Catch-all for any other exceptions
-            logger.error("Unexpected error creating time entry: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("error", "Unexpected error: " + e.getMessage()));
+            // We'll let the GlobalExceptionHandler handle this
+            logger.error("Error creating time entry", e);
+            throw e;
         }
     }
 

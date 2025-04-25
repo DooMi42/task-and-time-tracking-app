@@ -257,15 +257,19 @@ public class TimeEntryServiceImpl implements TimeEntryService {
             LocalDateTime startTime = parseDateTime(request.getStartTime());
             LocalDateTime endTime = parseDateTime(request.getEndTime());
 
-            if (endTime != null && startTime != null && endTime.isBefore(startTime)) {
+            // Validate times
+            if (startTime == null && endTime == null) {
+                throw new IllegalArgumentException("At least one of start time or end time must be provided");
+            }
+
+            if (startTime != null && endTime != null && endTime.isBefore(startTime)) {
                 throw new IllegalArgumentException("End time cannot be before start time");
             }
 
             timeEntry.setStartTime(startTime);
             timeEntry.setEndTime(endTime);
-        } catch (DateTimeParseException e) {
-            logger.error("Error parsing date/time: {}", e.getMessage());
-            throw new IllegalArgumentException("Invalid date format: " + e.getMessage());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error parsing date/time: " + e.getMessage(), e);
         }
 
         return timeEntry;

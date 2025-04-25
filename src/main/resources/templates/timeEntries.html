@@ -222,7 +222,6 @@
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Handle time entry form submission
             const timeEntryForm = document.getElementById('timeEntryForm');
 
             if (timeEntryForm) {
@@ -235,7 +234,7 @@
                     const startTime = document.getElementById('startTime').value;
                     const endTime = document.getElementById('endTime').value;
 
-                    // Create ISO-formatted strings
+                    // Create properly formatted ISO strings
                     const startDateTime = `${date}T${startTime}:00`;
                     const endDateTime = `${date}T${endTime}:00`;
 
@@ -260,38 +259,28 @@
                         })
                     })
                         .then(response => {
-                            // Check if the response is JSON
-                            const contentType = response.headers.get('content-type');
-                            if (contentType && contentType.includes('application/json')) {
-                                return response.json().then(data => {
-                                    if (!response.ok) {
-                                        throw new Error(data.error || "Unknown error");
-                                    }
-                                    return data;
-                                });
-                            } else {
-                                // Handle non-JSON response
-                                return response.text().then(text => {
-                                    if (!response.ok) {
-                                        throw new Error("Server error: non-JSON response");
-                                    }
-                                    try {
-                                        return JSON.parse(text);
-                                    } catch (e) {
-                                        console.error("Non-JSON response:", text);
-                                        throw new Error("Invalid server response");
-                                    }
+                            // First check if the response is OK
+                            if (!response.ok) {
+                                // Try to get JSON error message first
+                                return response.json().catch(() => {
+                                    // If that fails, get as text
+                                    return response.text().then(text => {
+                                        throw new Error(text || "Unknown server error");
+                                    });
+                                }).then(data => {
+                                    // If we got JSON but response is not OK
+                                    throw new Error(data.error || "Unknown server error");
                                 });
                             }
+
+                            // If response is OK, try to parse as JSON
+                            return response.json();
                         })
                         .then(data => {
                             console.log('Success:', data);
-
-                            // Hide modal and reload page
+                            // Close modal and reload page
                             const modal = bootstrap.Modal.getInstance(document.getElementById('addTimeEntryModal'));
-                            if (modal) {
-                                modal.hide();
-                            }
+                            if (modal) modal.hide();
                             window.location.reload();
                         })
                         .catch(error => {
