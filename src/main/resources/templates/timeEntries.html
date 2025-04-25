@@ -264,6 +264,64 @@
                 });
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const addTimeEntryForm = document.querySelector('#addTimeEntryModal form');
+            if (addTimeEntryForm) {
+                addTimeEntryForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(this);
+                    const taskId = formData.get('taskId');
+                    const description = formData.get('description');
+                    const date = formData.get('date');
+                    const startTime = formData.get('startTime');
+                    const endTime = formData.get('endTime');
+
+                    // Convert date and time to ISO format
+                    const startDateTime = date + 'T' + startTime + ':00';
+                    const endDateTime = date + 'T' + endTime + ':00';
+
+                    const timeEntryData = {
+                        taskId: taskId,
+                        description: description,
+                        startTime: startDateTime,
+                        endTime: endDateTime
+                    };
+
+                    // Log what we're sending
+                    console.log('Sending time entry data:', timeEntryData);
+
+                    fetch('/api/time-entries', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(timeEntryData)
+                    })
+                        .then(response => {
+                            if (response.ok) {
+                                return response.json().then(data => {
+                                    // Hide modal
+                                    bootstrap.Modal.getInstance(document.getElementById('addTimeEntryModal')).hide();
+                                    // Reload page
+                                    window.location.reload();
+                                });
+                            } else {
+                                return response.text().then(text => {
+                                    console.error('Error response:', text);
+                                    alert('Failed to create time entry: ' + text);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred: ' + error);
+                        });
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>
