@@ -88,6 +88,33 @@ public class SecurityConfig {
                 return http.build();
         }
 
+        // Web application security configuration (Form-based)
+        @Bean
+        @Order(2)
+        public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .securityMatcher("/**") // Apply to all non-API endpoints
+                                .authorizeHttpRequests(authorize -> authorize
+                                                .requestMatchers("/", "/index.html", "/css/**", "/js/**", "/images/**",
+                                                                "/error")
+                                                .permitAll()
+                                                .requestMatchers("/login", "/register").permitAll()
+                                                .anyRequest().authenticated())
+                                .formLogin(form -> form
+                                                .loginPage("/login")
+                                                .defaultSuccessUrl("/tasks", true)
+                                                .permitAll())
+                                .logout(logout -> logout
+                                                .logoutUrl("/perform_logout")
+                                                .logoutSuccessUrl("/login?logout")
+                                                .permitAll())
+                                // Enable CSRF for web forms but with proper configuration
+                                .csrf(csrf -> csrf
+                                                .ignoringRequestMatchers("/api/**"));
+
+                return http.build();
+        }
+
         @Bean
         public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
                         throws Exception {
