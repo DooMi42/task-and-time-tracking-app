@@ -5,11 +5,13 @@ import com.tasktracker.model.Task;
 import com.tasktracker.model.Task.TaskStatus;
 import com.tasktracker.model.User;
 import com.tasktracker.repository.TaskRepository;
+import com.tasktracker.repository.UserRepository;
 import com.tasktracker.service.TaskService;
 import com.tasktracker.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDate;
@@ -22,6 +24,7 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -152,7 +155,8 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public List<Task> getTasksByUsername(String username) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getTasksByUsername'");
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        return taskRepository.findByUser(user);
     }
 }

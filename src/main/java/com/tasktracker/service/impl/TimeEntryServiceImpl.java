@@ -6,9 +6,11 @@ import com.tasktracker.model.TimeEntry;
 import com.tasktracker.model.User;
 import com.tasktracker.repository.TaskRepository;
 import com.tasktracker.repository.TimeEntryRepository;
+import com.tasktracker.repository.UserRepository; // Add this import
 import com.tasktracker.service.TimeEntryService;
 import com.tasktracker.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException; // Add this import
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,7 @@ public class TimeEntryServiceImpl implements TimeEntryService {
 
     private final TimeEntryRepository timeEntryRepository;
     private final TaskRepository taskRepository;
+    private final UserRepository userRepository; // Add this field
     private final UserService userService;
 
     @Override
@@ -204,13 +207,15 @@ public class TimeEntryServiceImpl implements TimeEntryService {
 
     @Override
     public List<TimeEntry> getTimeEntriesByUsername(String username) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getTimeEntriesByUsername'");
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        return timeEntryRepository.findByUser(user);
     }
 
     @Override
     public List<TimeEntry> getTimeEntriesByTaskId(Long taskId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getTimeEntriesByTaskId'");
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + taskId));
+        return timeEntryRepository.findByTask(task);
     }
 }

@@ -118,4 +118,22 @@ public class UserServiceImpl implements UserService {
                 .roles(user.getRoles())
                 .build();
     }
+
+    @Override
+    public boolean existsByUsername(String username) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'existsByUsername'");
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'existsByEmail'");
+    }
+
+    @Override
+    public void save(User user) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'save'");
+    }
 }
