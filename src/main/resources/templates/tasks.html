@@ -36,12 +36,18 @@
         </div>
     </nav>
 
+    <!-- Add this debugging info at the top of your page to help troubleshoot -->
     <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
         <span th:text="${errorMessage}">Error message</span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 
     <div class="container mt-4">
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}">Success message</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>My Tasks</h2>
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
@@ -51,16 +57,19 @@
 
         <div th:if="${tasks != null && !tasks.empty}">
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                <div class="col" th:each="task : ${tasks}">
-                    <div class="card h-100" th:classappend="${task.completed} ? 'border-success' : ''">
+                <div th:each="task : ${tasks}" class="col-md-4 mb-4">
+                    <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title" th:text="${task.title}">Task Title</h5>
-                            <p class="card-text" th:text="${task.description}">Description</p>
+                            <h5 class="card-title" th:text="${task.title ?: 'Untitled Task'}">Task Title</h5>
+                            <p class="card-text" th:text="${task.description ?: 'No description'}">Task description</p>
                             <p class="card-text">
                                 <small class="text-muted">
-                                    Due: <span th:text="${#temporals.format(task.dueDate, 'MMM dd, yyyy')}">Jun 15,
-                                        2024</span>
+                                    Due: <span th:text="${task.dueDate ?: 'No due date'}">Due date</span>
                                 </small>
+                            </p>
+                            <!-- Only show status if it's not null -->
+                            <p class="card-text" th:if="${task.status != null}">
+                                Status: <span th:text="${task.status}">Status</span>
                             </p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="badge bg-success" th:if="${task.completed}">Completed</span>
@@ -92,11 +101,17 @@
             </div>
         </div>
         <div th:if="${tasks == null || tasks.empty}" class="alert alert-info">
-            You don't have any tasks yet. Create one to get started!
+            <p>You don't have any tasks yet. Create your first task using the button above!</p>
         </div>
 
         <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}">
             Error message will be displayed here
+        </div>
+
+        <!-- Add this at the bottom of your page for debugging purposes -->
+        <div th:if="${param.debug}" class="mt-4">
+            <h3>Debug Task Data</h3>
+            <pre th:each="task : ${tasks}" th:text="${task}">Task debug info</pre>
         </div>
     </div>
 

@@ -87,4 +87,14 @@ public class Task {
         LOW, MEDIUM, HIGH
     }
 
+    @Override
+    public String toString() {
+        return "Task{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", status=" + status +
+                ", dueDate=" + dueDate +
+                '}';
+    }
+
 }

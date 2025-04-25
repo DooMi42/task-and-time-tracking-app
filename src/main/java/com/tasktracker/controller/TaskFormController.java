@@ -35,20 +35,25 @@ public class TaskFormController {
             User user = userService.getUserByUsername(username);
             task.setUser(user);
 
-            // Explicitly set project to null if it's not used yet
-            task.setProject(null);
-
             // Set default values
             task.setCreatedAt(LocalDateTime.now());
             if (task.getStatus() == null) {
                 task.setStatus(Task.TaskStatus.TODO);
             }
 
+            // Explicitly set project to null if not used
+            task.setProject(null);
+
+            // Set default priority if needed
+            if (task.getPriority() == null) {
+                task.setPriority(Task.TaskPriority.MEDIUM);
+            }
+
             // Log what we're saving for debugging
             System.out.println("Saving task: " + task.getTitle() + " with status: " + task.getStatus());
 
-            // Save the task
             Task savedTask = taskService.saveTask(task);
+            redirectAttributes.addFlashAttribute("successMessage", "Task created successfully");
 
             return "redirect:/tasks";
         } catch (Exception e) {

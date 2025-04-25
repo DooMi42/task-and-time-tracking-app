@@ -42,12 +42,20 @@ public class ViewController {
                 List<Task> tasks = taskService.getTasksByUsername(username);
                 System.out.println("Found " + tasks.size() + " tasks for user " + username);
 
-                // Handle tasks with null values that might cause display issues
+                // Handle null values and set defaults to prevent UI errors
                 tasks.forEach(task -> {
                     if (task.getTitle() == null)
                         task.setTitle("");
                     if (task.getDescription() == null)
                         task.setDescription("");
+
+                    // Set default status if null
+                    if (task.getStatus() == null)
+                        task.setStatus(Task.TaskStatus.TODO);
+
+                    // Handle potential null priority
+                    if (task.getPriority() == null)
+                        task.setPriority(Task.TaskPriority.MEDIUM);
                 });
 
                 model.addAttribute("tasks", tasks);
@@ -59,14 +67,17 @@ public class ViewController {
             }
 
             // Always add a new task object for the form
-            model.addAttribute("newTask", new Task());
+            Task newTask = new Task();
+            newTask.setStatus(Task.TaskStatus.TODO); // Set default status
+            model.addAttribute("newTask", newTask);
+
             return "tasks";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("errorMessage", "Critical error: " + e.getMessage());
+            model.addAttribute("errorMessage", "Critical error in task view: " + e.getMessage());
             model.addAttribute("tasks", new ArrayList<>());
             model.addAttribute("newTask", new Task());
-            return "tasks"; // Return tasks view instead of error view
+            return "tasks"; // Stay on tasks page with error message
         }
     }
 
