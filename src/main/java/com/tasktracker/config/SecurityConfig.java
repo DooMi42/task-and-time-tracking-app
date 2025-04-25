@@ -65,9 +65,10 @@ public class SecurityConfig {
                 http
                                 .cors(cors -> {
                                 })
-                                .csrf(csrf -> csrf.disable())
+                                // Enable CSRF for web views - don't disable it here!
+                                .csrf(csrf -> {
+                                })
                                 .authorizeHttpRequests(authorize -> authorize
-                                                // Use requestMatchers instead of antMatchers
                                                 .requestMatchers("/login", "/register", "/css/**", "/js/**",
                                                                 "/debug/**")
                                                 .permitAll()

@@ -6,6 +6,7 @@ import com.tasktracker.model.User;
 import com.tasktracker.service.TaskService;
 import com.tasktracker.service.TimeEntryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -33,7 +34,7 @@ public class ViewController {
     }
 
     @GetMapping("/tasks")
-    public String tasks(Model model) {
+    public String tasks(Model model, HttpRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
             return "redirect:/login";
@@ -51,7 +52,7 @@ public class ViewController {
             List<Task> tasks = taskService.getTasksByUsername(username);
             System.out.println("Found " + tasks.size() + " tasks for user " + username);
 
-            // Create completed map (simple approach)
+            // Create completed map
             Map<Long, Boolean> completedMap = new HashMap<>();
             for (Task task : tasks) {
                 boolean completed = task.getStatus() == Task.TaskStatus.DONE;
