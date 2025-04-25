@@ -47,14 +47,19 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                                                 // Protect all other API endpoints
                                                 .anyRequest().authenticated())
+                                // Configure session management to allow both JWT and session auth
+                                .sessionManagement(session -> session
+                                                // Change from STATELESS to NEVER to allow existing sessions
+                                                .sessionCreationPolicy(SessionCreationPolicy.NEVER))
                                 .exceptionHandling(exceptions -> exceptions
                                                 .authenticationEntryPoint(
-                                                                (AuthenticationEntryPoint) jwtAuthenticationEntryPoint))
-                                .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                                                                (AuthenticationEntryPoint) jwtAuthenticationEntryPoint));
 
                 // Add JWT filter for API requests
                 http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+
+                // Make sure security context is properly configured
+                http.securityContext(securityContext -> securityContext.requireExplicitSave(false));
 
                 return http.build();
         }
