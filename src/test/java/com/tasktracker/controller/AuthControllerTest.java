@@ -21,7 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Collections;
 import java.util.HashSet;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -60,7 +60,7 @@ public class AuthControllerTest {
 
         when(userService.registerUser(any(RegisterRequest.class))).thenReturn(mockUserDto);
 
-        ResponseEntity<?> response = authController.registerUser(registerRequest);
+        ResponseEntity<?> response = authController.register(registerRequest);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals("User registered successfully", response.getBody());
@@ -77,7 +77,7 @@ public class AuthControllerTest {
         when(userService.registerUser(any(RegisterRequest.class)))
                 .thenThrow(new IllegalArgumentException("User already exists"));
 
-        ResponseEntity<?> response = authController.registerUser(registerRequest);
+        ResponseEntity<?> response = authController.register(registerRequest);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("User already exists", response.getBody());
@@ -99,9 +99,12 @@ public class AuthControllerTest {
 
         ResponseEntity<LoginResponse> response = authController.login(loginRequest);
 
+        // Full validation of the response
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("jwt-token", response.getBody().getJwt());
-        assertEquals("username", response.getBody().getUsername());
-        assertEquals("USER", response.getBody().getRole());
+        LoginResponse loginResponse = response.getBody();
+        assertNotNull(loginResponse);
+        assertEquals("jwt-token", loginResponse.getJwt());
+        assertEquals("username", loginResponse.getUsername());
+        assertEquals("USER", loginResponse.getRole());
     }
 }
