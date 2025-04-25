@@ -2,11 +2,13 @@ package com.tasktracker.controller;
 
 import com.tasktracker.dto.TimeEntryDto;
 import com.tasktracker.dto.TimeEntryRequest;
+import com.tasktracker.dto.TaskDto;
 import com.tasktracker.model.Task;
 import com.tasktracker.model.TimeEntry;
 import com.tasktracker.model.User;
 import com.tasktracker.service.TaskService;
 import com.tasktracker.service.TimeEntryService;
+import com.tasktracker.repository.TaskRepository;
 import com.tasktracker.repository.TimeEntryRepository;
 import com.tasktracker.repository.UserRepository;
 
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,19 +44,47 @@ public class TimeEntryController {
     @Autowired
     private TimeEntryRepository timeEntryRepository;
 
+    @Autowired
+    private TaskRepository taskRepository;
+
     @PostMapping
     public ResponseEntity<?> createTimeEntry(@RequestBody TimeEntryRequest request) {
         try {
             logger.info("Received time entry request: {}", request);
 
+            // Debug log all request fields individually
+            logger.debug("Request details - taskId: {}, description: {}, startTime: {}, endTime: {}",
+                    request.getTaskId(), request.getDescription(),
+                    request.getStartTime(), request.getEndTime());
+
             if (request == null || request.getTaskId() == null) {
                 return ResponseEntity.badRequest().body("Missing required task ID");
             }
 
-            // Create a simplified process - get task, create entry, save it
-            Task task = taskService.getTaskById(request.getTaskId());
-            if (task == null) {
-                return ResponseEntity.badRequest().body("Task not found");
+            // Replace the task lookup code with this implementation
+            Task task;
+            try {
+                // First verify the task exists and is accessible to the current user
+                TaskDto taskDto = taskService.getTaskById(request.getTaskId());
+                logger.info("Found task DTO: ID={}, title={}", taskDto.getId(), taskDto.getTitle());
+
+                // Now get the actual Task entity from the repository
+                // For this to work, you need to inject the TaskRepository
+                task = taskRepository.findById(request.getTaskId())
+                        .orElseThrow(
+                                () -> new EntityNotFoundException("Task not found with ID: " + request.getTaskId()));
+
+                logger.info("Found task entity: ID={}, title={}, user={}",
+                        task.getId(), task.getTitle(),
+                        task.getUser() != null ? task.getUser().getUsername() : "null");
+            } catch (EntityNotFoundException e) {
+                logger.error("Task not found with ID: {}", request.getTaskId());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Task not found with ID: " + request.getTaskId());
+            } catch (Exception e) {
+                logger.error("Error retrieving task with ID: {}", request.getTaskId(), e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Error retrieving task: " + e.getMessage());
             }
 
             // Parse dates to make sure they're valid
@@ -74,20 +105,33 @@ public class TimeEntryController {
             timeEntry.setStartTime(startTime);
             timeEntry.setEndTime(endTime);
 
+            // Replace the user lookup and save code
             // Get current user
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            String username = auth.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            timeEntry.setUser(user);
+            try {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                String username = auth.getName();
+                User user = userRepository.findByUsername(username)
+                        .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
 
-            // Save the entry
-            TimeEntry savedEntry = timeEntryRepository.save(timeEntry);
+                // Add this debug statement
+                logger.info("Found user: ID={}, username={}", user.getId(), user.getUsername());
 
-            // Return a simple success response
-            return ResponseEntity.ok(Map.of(
-                    "id", savedEntry.getId(),
-                    "message", "Time entry created successfully"));
+                timeEntry.setUser(user);
+
+                // Save the entry
+                TimeEntry savedEntry = timeEntryRepository.save(timeEntry);
+
+                // Return a simple success response
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", savedEntry.getId());
+                response.put("message", "Time entry created successfully");
+                logger.info("Successfully created time entry with ID: {}", savedEntry.getId());
+                return ResponseEntity.ok(response);
+            } catch (Exception e) {
+                logger.error("Error creating time entry", e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Failed to create time entry: " + e.getMessage());
+            }
         } catch (Exception e) {
             logger.error("Error creating time entry", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -95,23 +139,45 @@ public class TimeEntryController {
         }
     }
 
-    // Add this helper method to the controller
+    // Replace the current parseDateTime method with this more comprehensive version
     private LocalDateTime parseDateTime(String dateTimeStr) {
         if (dateTimeStr == null || dateTimeStr.isEmpty()) {
             throw new IllegalArgumentException("Date/time cannot be empty");
         }
 
+        logger.debug("Parsing date/time string: {}", dateTimeStr);
+
         try {
-            // Try standard ISO format
-            return LocalDateTime.parse(dateTimeStr);
-        } catch (Exception e) {
-            // Handle common issues with format
-            if (dateTimeStr.length() == 16 && dateTimeStr.contains("T")) {
-                // Format like "2023-04-25T14:30" missing seconds
-                return LocalDateTime.parse(dateTimeStr + ":00");
-            } else {
-                throw new IllegalArgumentException("Unsupported date format: " + dateTimeStr);
+            // Try standard ISO format (yyyy-MM-ddTHH:mm:ss)
+            if (dateTimeStr.contains("T") && dateTimeStr.length() >= 19) {
+                return LocalDateTime.parse(dateTimeStr);
             }
+
+            // Format like "2023-04-25T14:30" missing seconds
+            if (dateTimeStr.contains("T") && dateTimeStr.length() == 16) {
+                return LocalDateTime.parse(dateTimeStr + ":00");
+            }
+
+            // Format with date and time separated by space "2023-04-25 14:30"
+            if (dateTimeStr.contains(" ") && dateTimeStr.length() >= 16) {
+                String[] parts = dateTimeStr.split(" ");
+                if (parts.length == 2) {
+                    String timeComponent = parts[1].length() == 5 ? parts[1] + ":00" : parts[1];
+                    return LocalDateTime.parse(parts[0] + "T" + timeComponent);
+                }
+            }
+
+            // If it's just a date with no time
+            if (!dateTimeStr.contains("T") && !dateTimeStr.contains(" ")) {
+                return LocalDateTime.parse(dateTimeStr + "T00:00:00");
+            }
+
+            // Log and throw if we couldn't parse
+            logger.error("Unsupported date format: {}", dateTimeStr);
+            throw new IllegalArgumentException("Unsupported date format: " + dateTimeStr);
+        } catch (Exception e) {
+            logger.error("Error parsing date string: {} - Error: {}", dateTimeStr, e.getMessage());
+            throw new IllegalArgumentException("Failed to parse date: " + dateTimeStr + " - " + e.getMessage());
         }
     }
 
