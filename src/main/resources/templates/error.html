@@ -17,6 +17,9 @@
         </div>
         <a href="/login" class="btn btn-primary">Return to Login</a>
     </div>
+    <form th:action="@{/perform_logout}" method="post">
+        <button type="submit" class="btn btn-link nav-link">Logout</button>
+    </form>
 </body>
 
 </html>

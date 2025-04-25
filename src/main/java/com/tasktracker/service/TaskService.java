@@ -5,6 +5,7 @@ import com.tasktracker.model.Task.TaskStatus;
 import com.tasktracker.model.Task;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TaskService {
@@ -27,4 +28,9 @@ public interface TaskService {
     void deleteTask(Long id);
 
     List<Task> getTasksByUsername(String username);
+
+    Task createTask(Task task);
+
+    // Save task entity directly
+    Task saveTask(Task task);
 }

@@ -15,6 +15,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -127,6 +128,20 @@ public class TaskServiceImpl implements TaskService {
         taskRepository.delete(task);
     }
 
+    @Override
+    public Task createTask(Task task) {
+        // Set default values if needed
+        if (task.getCreatedAt() == null) {
+            task.setCreatedAt(LocalDateTime.now());
+        }
+
+        if (task.getStatus() == null) {
+            task.setStatus(TaskStatus.PENDING); // Use your actual enum values
+        }
+
+        return taskRepository.save(task);
+    }
+
     private Task findTaskById(Long id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + id));
@@ -158,5 +173,18 @@ public class TaskServiceImpl implements TaskService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
         return taskRepository.findByUser(user);
+    }
+
+    @Override
+    public Task saveTask(Task task) {
+        // Set defaults if needed
+        if (task.getCreatedAt() == null) {
+            task.setCreatedAt(LocalDateTime.now());
+        }
+        if (task.getStatus() == null) {
+            // Use the proper enum value instead of a String
+            task.setStatus(TaskStatus.TODO); // Using TaskStatus.TODO for consistency
+        }
+        return taskRepository.save(task);
     }
 }

@@ -76,7 +76,7 @@ public class UserServiceTest {
     public void testGetUserByUsername() {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
 
-        UserDto foundUser = userService.getUserByUsername("testuser");
+        User foundUser = userService.getUserByUsername("testuser");
 
         assertTrue(foundUser != null);
         assertEquals("testuser", foundUser.getUsername());

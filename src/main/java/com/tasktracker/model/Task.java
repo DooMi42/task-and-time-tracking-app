@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.tasktracker.dto.UserDto;
+
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -75,10 +77,11 @@ public class Task {
     }
 
     public enum TaskStatus {
-        TODO, IN_PROGRESS, DONE
+        TODO, IN_PROGRESS, DONE, PENDING
     }
 
     public enum TaskPriority {
         LOW, MEDIUM, HIGH
     }
+
 }
