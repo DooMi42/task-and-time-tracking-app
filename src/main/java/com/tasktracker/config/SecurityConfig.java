@@ -1,5 +1,6 @@
 package com.tasktracker.config;
 
+import com.tasktracker.security.JwtAuthenticationEntryPoint;
 import com.tasktracker.security.JwtRequestFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -24,82 +25,84 @@ import java.util.Collections;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig<JwtAuthenticationEntryPoint> {
+public class SecurityConfig {
 
-    @Autowired
-    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+        @Autowired
+        private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-    @Autowired
-    private JwtRequestFilter jwtRequestFilter;
+        @Autowired
+        private JwtRequestFilter jwtRequestFilter;
 
-    // API endpoints security configuration (JWT-based)
-    @Bean
-    @Order(1)
-    public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(cors -> {
-                })
-                .csrf(csrf -> csrf.disable())
-                .securityMatcher("/api/**")
-                .authorizeHttpRequests(authorize -> authorize
-                        // Allow both the login and register endpoints
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        // Protect all other API endpoints
-                        .anyRequest().authenticated())
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((AuthenticationEntryPoint) jwtAuthenticationEntryPoint))
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        // API endpoints security configuration (JWT-based)
+        @Bean
+        @Order(1)
+        public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .cors(cors -> {
+                                })
+                                .csrf(csrf -> csrf.disable())
+                                .securityMatcher("/api/**")
+                                .authorizeHttpRequests(authorize -> authorize
+                                                // Allow both the login and register endpoints
+                                                .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                                                // Protect all other API endpoints
+                                                .anyRequest().authenticated())
+                                .exceptionHandling(exceptions -> exceptions
+                                                .authenticationEntryPoint(
+                                                                (AuthenticationEntryPoint) jwtAuthenticationEntryPoint))
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // Add JWT filter for API requests
-        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                // Add JWT filter for API requests
+                http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+                return http.build();
+        }
 
-    @Bean
-    @Order(2)
-    public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(cors -> {
-                })
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/login", "/register", "/css/**", "/js/**").permitAll()
-                        .anyRequest().authenticated())
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        // Use a different processing URL that doesn't conflict with the JWT endpoint
-                        .loginProcessingUrl("/perform_login")
-                        .defaultSuccessUrl("/tasks", true)
-                        .permitAll())
-                .logout(logout -> logout
-                        .logoutUrl("/perform_logout")
-                        .logoutSuccessUrl("/login?logout")
-                        .permitAll());
+        @Bean
+        @Order(2)
+        public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .cors(cors -> {
+                                })
+                                .csrf(csrf -> csrf.disable())
+                                .authorizeHttpRequests(authorize -> authorize
+                                                .requestMatchers("/login", "/register", "/css/**", "/js/**").permitAll()
+                                                .anyRequest().authenticated())
+                                .formLogin(form -> form
+                                                .loginPage("/login")
+                                                // Use a different processing URL that doesn't conflict with the JWT
+                                                // endpoint
+                                                .loginProcessingUrl("/perform_login")
+                                                .defaultSuccessUrl("/tasks", true)
+                                                .permitAll())
+                                .logout(logout -> logout
+                                                .logoutUrl("/perform_logout")
+                                                .logoutSuccessUrl("/login?logout")
+                                                .permitAll());
 
-        return http.build();
-    }
+                return http.build();
+        }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-            throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
+        @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+                        throws Exception {
+                return authenticationConfiguration.getAuthenticationManager();
+        }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration configuration = new CorsConfiguration();
+                configuration.setAllowedOrigins(Collections.singletonList("*"));
+                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+                configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
+        }
 }
