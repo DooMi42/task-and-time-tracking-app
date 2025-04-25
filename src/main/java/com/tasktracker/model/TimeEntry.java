@@ -74,4 +74,15 @@ public class TimeEntry {
         long endMinutes = endTime.getHour() * 60 + endTime.getMinute();
         return (int) (endMinutes - startMinutes);
     }
+
+    @Override
+    public String toString() {
+        return "TimeEntry{" +
+                "id=" + id +
+                ", description='" + description + '\'' +
+                ", startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", taskId=" + (task != null ? task.getId() : null) +
+                '}';
+    }
 }

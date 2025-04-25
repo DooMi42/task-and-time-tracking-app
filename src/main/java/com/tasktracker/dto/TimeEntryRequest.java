@@ -6,6 +6,10 @@ public class TimeEntryRequest {
     private String startTime;
     private String endTime;
 
+    // Default constructor required for JSON deserialization
+    public TimeEntryRequest() {
+    }
+
     // Getters and setters
     public Long getTaskId() {
         return taskId;
