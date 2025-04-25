@@ -129,17 +129,21 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Task createTask(Task task) {
-        // Set default values if needed
+    public Task saveTask(Task task) {
+        // Set defaults if needed
         if (task.getCreatedAt() == null) {
             task.setCreatedAt(LocalDateTime.now());
         }
-
         if (task.getStatus() == null) {
-            task.setStatus(TaskStatus.PENDING); // Use your actual enum values
+            task.setStatus(Task.TaskStatus.TODO); // Consistent with other methods
         }
-
         return taskRepository.save(task);
+    }
+
+    @Override
+    public Task createTask(Task task) {
+        // Use the saveTask method for consistency
+        return saveTask(task);
     }
 
     private Task findTaskById(Long id) {
@@ -173,18 +177,5 @@ public class TaskServiceImpl implements TaskService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
         return taskRepository.findByUser(user);
-    }
-
-    @Override
-    public Task saveTask(Task task) {
-        // Set defaults if needed
-        if (task.getCreatedAt() == null) {
-            task.setCreatedAt(LocalDateTime.now());
-        }
-        if (task.getStatus() == null) {
-            // Use the proper enum value instead of a String
-            task.setStatus(TaskStatus.TODO); // Using TaskStatus.TODO for consistency
-        }
-        return taskRepository.save(task);
     }
 }

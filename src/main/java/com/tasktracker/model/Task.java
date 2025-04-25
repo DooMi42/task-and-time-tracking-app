@@ -77,7 +77,10 @@ public class Task {
     }
 
     public enum TaskStatus {
-        TODO, IN_PROGRESS, DONE, PENDING
+        TODO, // New task
+        IN_PROGRESS, // Started but not finished
+        DONE, // Completed
+        PENDING // Waiting to start
     }
 
     public enum TaskPriority {

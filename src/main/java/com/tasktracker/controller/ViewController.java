@@ -13,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -35,6 +36,9 @@ public class ViewController {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String username = auth.getName();
 
+            // Log the username for debugging
+            System.out.println("Loading tasks for user: " + username);
+
             List<Task> tasks = taskService.getTasksByUsername(username);
             model.addAttribute("tasks", tasks);
             model.addAttribute("newTask", new Task());
@@ -44,7 +48,10 @@ public class ViewController {
             // Log the exception
             e.printStackTrace();
             model.addAttribute("errorMessage", "Error loading tasks: " + e.getMessage());
-            return "error"; // Create a simple error.html template
+            // Still add empty lists so the page doesn't crash
+            model.addAttribute("tasks", new ArrayList<>());
+            model.addAttribute("newTask", new Task());
+            return "tasks"; // Return tasks view instead of error view
         }
     }
 

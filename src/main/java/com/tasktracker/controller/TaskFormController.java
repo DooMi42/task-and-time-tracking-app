@@ -35,16 +35,20 @@ public class TaskFormController {
             User user = userService.getUserByUsername(username);
             task.setUser(user);
 
-            // Set creation time
+            // Set default values
             task.setCreatedAt(LocalDateTime.now());
+            if (task.getStatus() == null) {
+                task.setStatus(Task.TaskStatus.TODO);
+            }
 
-            // Create the task using the entity directly
-            taskService.saveTask(task);
+            // Log what we're saving for debugging
+            System.out.println("Saving task: " + task.getTitle() + " with status: " + task.getStatus());
 
-            // Redirect to the tasks page
+            // Save the task
+            Task savedTask = taskService.saveTask(task);
+
             return "redirect:/tasks";
         } catch (Exception e) {
-            // Log the error
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "Failed to create task: " + e.getMessage());
             return "redirect:/error";
