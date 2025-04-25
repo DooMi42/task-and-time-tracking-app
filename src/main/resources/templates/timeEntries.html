@@ -101,7 +101,8 @@
     <div class="modal fade" id="addTimeEntryModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form th:action="@{/api/timeEntries}" method="post">
+                <!-- Update your form action to match the controller endpoint -->
+                <form th:action="@{/api/time-entries}" method="post">
                     <div class="modal-header">
                         <h5 class="modal-title">Log Time</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -218,6 +219,49 @@
                     new bootstrap.Modal(document.getElementById('editTimeEntryModal')).show();
                 });
             });
+        });
+    </script>
+    <script>
+        document.querySelector('#addTimeEntryModal form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            // Parse the date and time values to create proper datetime objects
+            const date = formData.get('date');
+            const startTime = formData.get('startTime');
+            const endTime = formData.get('endTime');
+
+            const startDateTime = `${date}T${startTime}:00`;
+            const endDateTime = `${date}T${endTime}:00`;
+
+            const timeEntryData = {
+                taskId: formData.get('taskId'),
+                description: formData.get('description'),
+                startTime: startDateTime,
+                endTime: endDateTime
+            };
+
+            fetch('/api/time-entries', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(timeEntryData)
+            })
+                .then(response => {
+                    if (response.ok) {
+                        bootstrap.Modal.getInstance(document.getElementById('addTimeEntryModal')).hide();
+                        window.location.reload();
+                    } else {
+                        response.text().then(text => {
+                            alert('Failed to create time entry: ' + text);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         });
     </script>
 </body>
