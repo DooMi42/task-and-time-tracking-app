@@ -33,4 +33,6 @@ public interface TaskService {
 
     // Save task entity directly
     Task saveTask(Task task);
+
+    List<TaskDto> getTaskDtosByUsername(String username);
 }

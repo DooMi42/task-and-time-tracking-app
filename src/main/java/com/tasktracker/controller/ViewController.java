@@ -5,6 +5,7 @@ import com.tasktracker.model.TimeEntry;
 import com.tasktracker.model.User;
 import com.tasktracker.service.TaskService;
 import com.tasktracker.service.TimeEntryService;
+import com.tasktracker.dto.TaskDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -43,25 +44,34 @@ public class ViewController {
             String username = auth.getName();
             System.out.println("Loading tasks for user: " + username);
 
-            // Add empty collections as defaults to prevent NPEs
+            // Always ensure we have these attributes to prevent errors
             model.addAttribute("tasks", new ArrayList<>());
             model.addAttribute("completedMap", new HashMap<>());
 
             try {
-                // Get tasks with exception handling
-                List<Task> tasks = taskService.getTasksByUsername(username);
-                System.out.println("Found " + tasks.size() + " tasks for user " + username);
+                // Create a DTO-based approach to avoid lazy loading issues
+                List<TaskDto> taskDtos = taskService.getTaskDtosByUsername(username);
+                System.out.println("Found " + taskDtos.size() + " tasks for user " + username);
 
-                // Create a map of task IDs to "completed" status
+                // Convert to regular Task objects that are detached from Hibernate
+                List<Task> tasks = new ArrayList<>();
                 Map<Long, Boolean> completedMap = new HashMap<>();
-                for (Task task : tasks) {
-                    // Consider a task completed if its status is DONE
-                    boolean isCompleted = task.getStatus() != null &&
-                            Task.TaskStatus.DONE.equals(task.getStatus());
-                    completedMap.put(task.getId(), isCompleted);
+
+                for (TaskDto dto : taskDtos) {
+                    Task task = new Task();
+                    task.setId(dto.getId());
+                    task.setTitle(dto.getTitle());
+                    task.setDescription(dto.getDescription());
+                    task.setStatus(dto.getStatus());
+                    task.setPriority(dto.getPriority());
+                    task.setDueDate(dto.getDueDate());
+
+                    // No need to set user or timeEntries - they won't be accessed in the template
+
+                    tasks.add(task);
+                    completedMap.put(task.getId(), Task.TaskStatus.DONE.equals(task.getStatus()));
                 }
 
-                // Update model after successful retrieval
                 model.addAttribute("tasks", tasks);
                 model.addAttribute("completedMap", completedMap);
 
@@ -78,8 +88,9 @@ public class ViewController {
             return "tasks";
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("errorMessage", "Critical error in task view: " + e.getMessage());
-            return "error"; // Return the error page as a fallback
+            model.addAttribute("errorMessage", "Critical error: " + e.getMessage());
+            // Return tasks view anyway with empty lists
+            return "tasks";
         }
     }
 

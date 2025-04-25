@@ -93,8 +93,6 @@ public class Task {
                 "id=" + id +
                 ", title='" + title + '\'' +
                 ", status=" + status +
-                ", dueDate=" + dueDate +
-                ", userId=" + (user != null ? user.getId() : null) +
                 '}';
     }
 

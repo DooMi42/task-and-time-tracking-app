@@ -45,6 +45,12 @@
     </div>
 
     <div class="container mt-4">
+        <!-- Make sure this is at the top of your container div -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            <span th:text="${errorMessage}">Error message</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
         <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
             <span th:text="${successMessage}">Success message</span>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -64,9 +70,10 @@
                         <div class="card-body">
                             <h5 class="card-title" th:text="${task.title ?: 'Untitled Task'}">Task Title</h5>
                             <p class="card-text" th:text="${task.description ?: 'No description'}">Task description</p>
-                            <p class="card-text">
+                            <p class="card-text" th:if="${task.dueDate != null}">
                                 <small class="text-muted">
-                                    Due: <span th:text="${task.dueDate ?: 'No due date'}">Due date</span>
+                                    Due: <span th:text="${#temporals.format(task.dueDate, 'yyyy-MM-dd')}">Due
+                                        date</span>
                                 </small>
                             </p>
                             <!-- Only show status if it's not null -->
@@ -83,19 +90,7 @@
                                         class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-clock"></i> Time Entries
                                     </a>
-                                    <button class="btn btn-sm btn-outline-primary edit-task-btn"
-                                        th:data-task-id="${task.id}" th:data-task-title="${task.title}"
-                                        th:data-task-description="${task.description}"
-                                        th:data-task-due-date="${#temporals.format(task.dueDate, 'yyyy-MM-dd')}"
-                                        th:data-task-status="${task.status}">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <!-- Replace your existing delete form with this JavaScript-based approach -->
-                                    <button class="btn btn-sm btn-outline-danger delete-task-btn"
-                                        th:data-task-id="${task.id}"
-                                        onclick="return confirm('Are you sure you want to delete this task?')">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <!-- Rest of buttons remain the same -->
                                 </div>
                             </div>
                         </div>

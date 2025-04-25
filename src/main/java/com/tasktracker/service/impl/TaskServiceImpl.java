@@ -193,4 +193,14 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
         return taskRepository.findByUser(user);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TaskDto> getTaskDtosByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+
+        List<Task> tasks = taskRepository.findByUser(user);
+        return tasks.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
 }
