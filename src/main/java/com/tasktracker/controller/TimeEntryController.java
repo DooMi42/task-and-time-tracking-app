@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
@@ -56,7 +57,9 @@ public class TimeEntryController {
             // Basic validation
             if (request == null || request.getTaskId() == null) {
                 logger.warn("Invalid request: missing task ID");
-                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Missing required task ID"));
+                return ResponseEntity.badRequest()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(Collections.singletonMap("error", "Missing required task ID"));
             }
 
             logger.info("Creating time entry - taskId: {}, description: {}, startTime: {}, endTime: {}",
@@ -72,11 +75,19 @@ public class TimeEntryController {
             Map<String, Object> response = new HashMap<>();
             response.put("id", savedEntry.getId());
             response.put("message", "Time entry created successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response);
         } catch (Exception e) {
-            // We'll let the GlobalExceptionHandler handle this
+            // Handle exception here directly instead of throwing it
             logger.error("Error creating time entry", e);
-            throw e;
+
+            Map<String, String> errorResponse = Collections.singletonMap(
+                    "error", "Failed to create time entry: " + e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
         }
     }
 

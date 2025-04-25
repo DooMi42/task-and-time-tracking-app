@@ -13,6 +13,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.MediaType;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +31,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             Map<String, Object> body = new HashMap<>();
             body.put("error", ex.getMessage());
             body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-            return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            return new ResponseEntity<>(body, headers, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         // For other requests, let default error handling take place
@@ -44,7 +49,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         Map<String, Object> body = new HashMap<>();
         body.put("error", ex.getMessage());
         body.put("status", HttpStatus.NOT_FOUND.value());
-        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        return new ResponseEntity<>(body, headers, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

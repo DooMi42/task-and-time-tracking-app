@@ -259,22 +259,36 @@
                         })
                     })
                         .then(response => {
-                            // First check if the response is OK
-                            if (!response.ok) {
-                                // Try to get JSON error message first
-                                return response.json().catch(() => {
-                                    // If that fails, get as text
-                                    return response.text().then(text => {
-                                        throw new Error(text || "Unknown server error");
-                                    });
-                                }).then(data => {
-                                    // If we got JSON but response is not OK
-                                    throw new Error(data.error || "Unknown server error");
+                            // Store status for later use
+                            const status = response.status;
+
+                            // Check content type to determine how to parse the response
+                            const contentType = response.headers.get("content-type");
+
+                            if (contentType && contentType.includes("application/json")) {
+                                // It's JSON, parse it as JSON
+                                return response.json().then(data => {
+                                    if (!response.ok) {
+                                        // If response is not OK, throw an error with the JSON error message
+                                        throw new Error(data.error || `Server error: ${status}`);
+                                    }
+                                    return data;
+                                });
+                            } else {
+                                // It's not JSON, get it as text
+                                return response.text().then(text => {
+                                    if (!response.ok) {
+                                        // If response is not OK, throw an error with the text
+                                        throw new Error(text || `Server error: ${status}`);
+                                    }
+                                    try {
+                                        // Try to parse as JSON anyway (in case content type is wrong)
+                                        return JSON.parse(text);
+                                    } catch (e) {
+                                        return { message: text };
+                                    }
                                 });
                             }
-
-                            // If response is OK, try to parse as JSON
-                            return response.json();
                         })
                         .then(data => {
                             console.log('Success:', data);
