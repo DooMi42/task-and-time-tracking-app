@@ -39,13 +39,25 @@ public class ViewController {
             // Log the username for debugging
             System.out.println("Loading tasks for user: " + username);
 
-            List<Task> tasks = taskService.getTasksByUsername(username);
-            model.addAttribute("tasks", tasks);
+            // Add detailed error logging
+            try {
+                List<Task> tasks = taskService.getTasksByUsername(username);
+                System.out.println("Found " + tasks.size() + " tasks for user " + username);
+                model.addAttribute("tasks", tasks);
+            } catch (Exception taskEx) {
+                System.err.println("Error loading tasks: " + taskEx.getMessage());
+                taskEx.printStackTrace();
+                // Add empty list to prevent UI errors
+                model.addAttribute("tasks", new ArrayList<>());
+            }
+
+            // Add a new task object for the form
             model.addAttribute("newTask", new Task());
 
             return "tasks";
         } catch (Exception e) {
             // Log the exception
+            System.err.println("Critical error in tasks view: " + e.getMessage());
             e.printStackTrace();
             model.addAttribute("errorMessage", "Error loading tasks: " + e.getMessage());
             // Still add empty lists so the page doesn't crash

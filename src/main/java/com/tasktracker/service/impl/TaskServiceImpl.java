@@ -129,15 +129,28 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional
     public Task saveTask(Task task) {
-        // Set defaults if needed
-        if (task.getCreatedAt() == null) {
-            task.setCreatedAt(LocalDateTime.now());
+        // Simplified task saving
+        try {
+            if (task.getCreatedAt() == null) {
+                task.setCreatedAt(LocalDateTime.now());
+            }
+
+            // Ensure status isn't null
+            if (task.getStatus() == null) {
+                task.setStatus(TaskStatus.TODO);
+            }
+
+            System.out.println("Saving task: " + task.getTitle() + " for user: " +
+                    (task.getUser() != null ? task.getUser().getUsername() : "unknown"));
+
+            return taskRepository.save(task);
+        } catch (Exception e) {
+            System.err.println("Error saving task: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // Re-throw to let the controller handle it
         }
-        if (task.getStatus() == null) {
-            task.setStatus(Task.TaskStatus.TODO); // Consistent with other methods
-        }
-        return taskRepository.save(task);
     }
 
     @Override
