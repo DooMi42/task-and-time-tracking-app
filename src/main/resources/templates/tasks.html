@@ -291,13 +291,13 @@
 
         // Then use fetchWithCSRF instead of fetch in all your JavaScript
     </script>
-    <!-- Add this script at the end of your file -->
+    <!-- Replace the existing delete button script with this -->
     <script>
         document.querySelectorAll('.delete-task-btn').forEach(button => {
             button.addEventListener('click', function () {
                 const taskId = this.getAttribute('data-task-id');
 
-                fetch(`/api/tasks/${taskId}`, {
+                fetchWithCSRF(`/api/tasks/${taskId}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json'

@@ -14,11 +14,23 @@
             <h4 class="alert-heading">Error!</h4>
             <p th:if="${errorMessage}" th:text="${errorMessage}">An error occurred.</p>
             <p th:unless="${errorMessage}">An unexpected error occurred. Please try again later.</p>
+
+            <!-- Add debugging information -->
+            <div th:if="${exception}" class="mt-3">
+                <hr>
+                <h5>Error Details (Development Only)</h5>
+                <p><strong>Error:</strong> <span th:text="${exception}">Exception</span></p>
+                <p><strong>Path:</strong> <span th:text="${path}">Path</span></p>
+                <pre th:if="${trace}" th:text="${trace}">Stack trace</pre>
+            </div>
         </div>
-        <a href="/login" class="btn btn-primary">Return to Login</a>
+        <div class="d-flex gap-2">
+            <a href="/login" class="btn btn-primary">Return to Login</a>
+            <a href="/debug/tasks" class="btn btn-outline-secondary">Debug Tasks</a>
+        </div>
     </div>
-    <form th:action="@{/perform_logout}" method="post">
-        <button type="submit" class="btn btn-link nav-link">Logout</button>
+    <form th:action="@{/perform_logout}" method="post" class="mt-3 text-center">
+        <button type="submit" class="btn btn-link">Logout</button>
     </form>
 </body>
 

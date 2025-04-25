@@ -36,41 +36,37 @@ public class ViewController {
     public String tasks(Model model) {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            String username = auth.getName();
+            if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+                return "redirect:/login";
+            }
 
+            String username = auth.getName();
             System.out.println("Loading tasks for user: " + username);
 
+            // Add empty collections as defaults to prevent NPEs
+            model.addAttribute("tasks", new ArrayList<>());
+            model.addAttribute("completedMap", new HashMap<>());
+
             try {
+                // Get tasks with exception handling
                 List<Task> tasks = taskService.getTasksByUsername(username);
                 System.out.println("Found " + tasks.size() + " tasks for user " + username);
 
-                // Handle null values and set defaults
-                tasks.forEach(task -> {
-                    if (task.getTitle() == null)
-                        task.setTitle("");
-                    if (task.getDescription() == null)
-                        task.setDescription("");
-                    if (task.getStatus() == null)
-                        task.setStatus(Task.TaskStatus.TODO);
-                    if (task.getPriority() == null)
-                        task.setPriority(Task.TaskPriority.MEDIUM);
-                });
-
-                // Create a map of task IDs to "completed" status for the template
+                // Create a map of task IDs to "completed" status
                 Map<Long, Boolean> completedMap = new HashMap<>();
                 for (Task task : tasks) {
                     // Consider a task completed if its status is DONE
-                    boolean isCompleted = Task.TaskStatus.DONE.equals(task.getStatus());
+                    boolean isCompleted = task.getStatus() != null &&
+                            Task.TaskStatus.DONE.equals(task.getStatus());
                     completedMap.put(task.getId(), isCompleted);
                 }
 
+                // Update model after successful retrieval
                 model.addAttribute("tasks", tasks);
-                model.addAttribute("completedMap", completedMap); // Add this map for the template
+                model.addAttribute("completedMap", completedMap);
 
             } catch (Exception taskEx) {
-                System.err.println("Error loading tasks: " + taskEx.getMessage());
                 taskEx.printStackTrace();
-                model.addAttribute("tasks", new ArrayList<>());
                 model.addAttribute("errorMessage", "Error loading tasks: " + taskEx.getMessage());
             }
 
@@ -83,9 +79,7 @@ public class ViewController {
         } catch (Exception e) {
             e.printStackTrace();
             model.addAttribute("errorMessage", "Critical error in task view: " + e.getMessage());
-            model.addAttribute("tasks", new ArrayList<>());
-            model.addAttribute("newTask", new Task());
-            return "tasks";
+            return "error"; // Return the error page as a fallback
         }
     }
 

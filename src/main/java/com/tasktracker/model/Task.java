@@ -94,6 +94,7 @@ public class Task {
                 ", title='" + title + '\'' +
                 ", status=" + status +
                 ", dueDate=" + dueDate +
+                ", userId=" + (user != null ? user.getId() : null) +
                 '}';
     }
 
