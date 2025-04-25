@@ -61,12 +61,9 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TimeEntry> timeEntries = new HashSet<>();
 
+    // Add this method to prevent circular references
     @Override
     public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", username='" + username + '\'' +
-                ", email='" + email + '\'' +
-                '}';
+        return "User{id=" + id + ", username='" + username + "'}";
     }
 }

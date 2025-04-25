@@ -87,13 +87,10 @@ public class Task {
         LOW, MEDIUM, HIGH
     }
 
+    // Add this method to prevent circular references
     @Override
     public String toString() {
-        return "Task{" +
-                "id=" + id +
-                ", title='" + title + '\'' +
-                ", status=" + status +
-                '}';
+        return "Task{id=" + id + ", title='" + title + "', status=" + status + "}";
     }
 
 }

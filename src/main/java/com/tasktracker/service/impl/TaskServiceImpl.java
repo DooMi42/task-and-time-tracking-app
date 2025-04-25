@@ -188,10 +188,26 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Task> getTasksByUsername(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-        return taskRepository.findByUser(user);
+        try {
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+            List<Task> tasks = taskRepository.findByUser(user);
+
+            // Initialize any lazy collections if needed
+            for (Task task : tasks) {
+                if (task.getTimeEntries() != null) {
+                    task.getTimeEntries().size(); // Force initialization
+                }
+            }
+
+            return tasks;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error fetching tasks: " + e.getMessage(), e);
+        }
     }
 
     @Override

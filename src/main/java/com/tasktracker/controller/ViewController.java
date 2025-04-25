@@ -5,7 +5,6 @@ import com.tasktracker.model.TimeEntry;
 import com.tasktracker.model.User;
 import com.tasktracker.service.TaskService;
 import com.tasktracker.service.TimeEntryService;
-import com.tasktracker.dto.TaskDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,63 +34,41 @@ public class ViewController {
 
     @GetMapping("/tasks")
     public String tasks(Model model) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return "redirect:/login";
+        }
+
+        String username = auth.getName();
+        System.out.println("Loading tasks for user: " + username);
+
+        // Initialize empty collections to prevent NPEs
+        model.addAttribute("tasks", new ArrayList<>());
+        model.addAttribute("completedMap", new HashMap<>());
+
         try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-                return "redirect:/login";
+            // Get tasks from service
+            List<Task> tasks = taskService.getTasksByUsername(username);
+            System.out.println("Found " + tasks.size() + " tasks for user " + username);
+
+            // Create completed map (simple approach)
+            Map<Long, Boolean> completedMap = new HashMap<>();
+            for (Task task : tasks) {
+                boolean completed = task.getStatus() == Task.TaskStatus.DONE;
+                completedMap.put(task.getId(), completed);
             }
 
-            String username = auth.getName();
-            System.out.println("Loading tasks for user: " + username);
-
-            // Always ensure we have these attributes to prevent errors
-            model.addAttribute("tasks", new ArrayList<>());
-            model.addAttribute("completedMap", new HashMap<>());
-
-            try {
-                // Create a DTO-based approach to avoid lazy loading issues
-                List<TaskDto> taskDtos = taskService.getTaskDtosByUsername(username);
-                System.out.println("Found " + taskDtos.size() + " tasks for user " + username);
-
-                // Convert to regular Task objects that are detached from Hibernate
-                List<Task> tasks = new ArrayList<>();
-                Map<Long, Boolean> completedMap = new HashMap<>();
-
-                for (TaskDto dto : taskDtos) {
-                    Task task = new Task();
-                    task.setId(dto.getId());
-                    task.setTitle(dto.getTitle());
-                    task.setDescription(dto.getDescription());
-                    task.setStatus(dto.getStatus());
-                    task.setPriority(dto.getPriority());
-                    task.setDueDate(dto.getDueDate());
-
-                    // No need to set user or timeEntries - they won't be accessed in the template
-
-                    tasks.add(task);
-                    completedMap.put(task.getId(), Task.TaskStatus.DONE.equals(task.getStatus()));
-                }
-
-                model.addAttribute("tasks", tasks);
-                model.addAttribute("completedMap", completedMap);
-
-            } catch (Exception taskEx) {
-                taskEx.printStackTrace();
-                model.addAttribute("errorMessage", "Error loading tasks: " + taskEx.getMessage());
-            }
-
-            // Always add a new task object for the form
-            Task newTask = new Task();
-            newTask.setStatus(Task.TaskStatus.TODO);
-            model.addAttribute("newTask", newTask);
-
-            return "tasks";
+            // Add to model
+            model.addAttribute("tasks", tasks);
+            model.addAttribute("completedMap", completedMap);
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("errorMessage", "Critical error: " + e.getMessage());
-            // Return tasks view anyway with empty lists
-            return "tasks";
+            model.addAttribute("errorMessage", "Failed to load tasks: " + e.getMessage());
         }
+
+        // Always add a new task for the form
+        model.addAttribute("newTask", new Task());
+        return "tasks";
     }
 
     @GetMapping("/timeEntries")
@@ -99,18 +76,25 @@ public class ViewController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
-        List<TimeEntry> entries;
-        if (taskId != null) {
-            entries = timeEntryService.getTimeEntriesByTaskId(taskId);
-            model.addAttribute("taskId", taskId);
-            model.addAttribute("taskTitle", taskService.getTaskById(taskId).getTitle());
-        } else {
-            entries = timeEntryService.getTimeEntriesByUsername(username);
-        }
+        try {
+            List<TimeEntry> entries;
+            if (taskId != null) {
+                entries = timeEntryService.getTimeEntriesByTaskId(taskId);
+                model.addAttribute("taskId", taskId);
+                model.addAttribute("taskTitle", taskService.getTaskById(taskId).getTitle());
+            } else {
+                entries = timeEntryService.getTimeEntriesByUsername(username);
+            }
 
-        model.addAttribute("timeEntries", entries);
-        model.addAttribute("newTimeEntry", new TimeEntry());
-        model.addAttribute("tasks", taskService.getTasksByUsername(username));
+            model.addAttribute("timeEntries", entries);
+            model.addAttribute("newTimeEntry", new TimeEntry());
+            model.addAttribute("tasks", taskService.getTasksByUsername(username));
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("errorMessage", "Failed to load time entries: " + e.getMessage());
+            model.addAttribute("timeEntries", new ArrayList<>());
+            model.addAttribute("tasks", new ArrayList<>());
+        }
 
         return "timeEntries";
     }
