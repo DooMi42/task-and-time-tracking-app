@@ -1,6 +1,7 @@
 package com.tasktracker.service;
 
 import com.tasktracker.dto.TimeEntryDto;
+import com.tasktracker.model.TimeEntry;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,4 +28,8 @@ public interface TimeEntryService {
     TimeEntryDto createTimeEntry(TimeEntryDto timeEntryDto);
 
     List<TimeEntryDto> getAllTimeEntries();
+
+    List<TimeEntry> getTimeEntriesByUsername(String username);
+
+    List<TimeEntry> getTimeEntriesByTaskId(Long taskId);
 }

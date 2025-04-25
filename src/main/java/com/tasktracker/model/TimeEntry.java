@@ -63,4 +63,15 @@ public class TimeEntry {
         long seconds = Duration.between(startTime, end).getSeconds();
         return seconds / 3600.0;
     }
+
+    public int getDurationInMinutes() {
+        if (startTime == null || endTime == null) {
+            return 0;
+        }
+
+        // Calculate duration in minutes
+        long startMinutes = startTime.getHour() * 60 + startTime.getMinute();
+        long endMinutes = endTime.getHour() * 60 + endTime.getMinute();
+        return (int) (endMinutes - startMinutes);
+    }
 }

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Task Tracker - Time Entries</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Task Tracker</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/tasks}">Tasks</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/timeEntries}">Time Entries</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <form th:action="@{/logout}" method="post">
+                            <button type="submit" class="btn btn-link nav-link">Logout</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>Time Entries</h2>
+                <p th:if="${taskTitle}" class="text-muted">
+                    For task: <span th:text="${taskTitle}"></span>
+                    <a th:href="@{/timeEntries}" class="btn btn-sm btn-outline-secondary">View All Entries</a>
+                </p>
+            </div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTimeEntryModal">
+                <i class="bi bi-plus"></i> Log Time
+            </button>
+        </div>
+
+        <div class="alert alert-info" th:if="${timeEntries.empty}">
+            No time entries found. Start logging time for your tasks!
+        </div>
+
+        <div class="table-responsive" th:if="${!timeEntries.empty}">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Description</th>
+                        <th>Date</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Duration</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="entry : ${timeEntries}">
+                        <td th:text="${entry.task.title}">Task Title</td>
+                        <td th:text="${entry.description}">Description</td>
+                        <td th:text="${#temporals.format(entry.date, 'MMM dd, yyyy')}">Date</td>
+                        <td th:text="${#temporals.format(entry.startTime, 'HH:mm')}">Start</td>
+                        <td th:text="${#temporals.format(entry.endTime, 'HH:mm')}">End</td>
+                        <td th:text="${entry.getDurationInMinutes()} + ' min'">Duration</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary edit-entry-btn" th:data-entry-id="${entry.id}"
+                                th:data-task-id="${entry.task.id}" th:data-description="${entry.description}"
+                                th:data-date="${#temporals.format(entry.date, 'yyyy-MM-dd')}"
+                                th:data-start-time="${#temporals.format(entry.startTime, 'HH:mm')}"
+                                th:data-end-time="${#temporals.format(entry.endTime, 'HH:mm')}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <form class="d-inline" th:action="@{/api/timeEntries/{id}(id=${entry.id})}" method="post">
+                                <input type="hidden" name="_method" value="DELETE">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Are you sure you want to delete this time entry?')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add Time Entry Modal -->
+    <div class="modal fade" id="addTimeEntryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{/api/timeEntries}" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Log Time</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="taskId" class="form-label">Task</label>
+                            <select class="form-select" id="taskId" name="taskId" required>
+                                <option value="">Select a task...</option>
+                                <option th:each="task : ${tasks}" th:value="${task.id}" th:text="${task.title}"
+                                    th:selected="${taskId != null && taskId == task.id}">
+                                    Task Title
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="date" name="date" required
+                                th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="startTime" class="form-label">Start Time</label>
+                                <input type="time" class="form-control" id="startTime" name="startTime" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="endTime" class="form-label">End Time</label>
+                                <input type="time" class="form-control" id="endTime" name="endTime" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Entry</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Time Entry Modal -->
+    <div class="modal fade" id="editTimeEntryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editTimeEntryForm" method="post">
+                    <input type="hidden" name="_method" value="PUT">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Time Entry</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editTaskId" class="form-label">Task</label>
+                            <select class="form-select" id="editTaskId" name="taskId" required>
+                                <option value="">Select a task...</option>
+                                <option th:each="task : ${tasks}" th:value="${task.id}" th:text="${task.title}">
+                                    Task Title
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editDescription" name="description" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="editDate" name="date" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStartTime" class="form-label">Start Time</label>
+                                <input type="time" class="form-control" id="editStartTime" name="startTime" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editEndTime" class="form-label">End Time</label>
+                                <input type="time" class="form-control" id="editEndTime" name="endTime" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Entry</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set up edit time entry buttons
+            document.querySelectorAll('.edit-entry-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const entryId = this.getAttribute('data-entry-id');
+                    const taskId = this.getAttribute('data-task-id');
+                    const description = this.getAttribute('data-description');
+                    const date = this.getAttribute('data-date');
+                    const startTime = this.getAttribute('data-start-time');
+                    const endTime = this.getAttribute('data-end-time');
+
+                    document.getElementById('editTimeEntryForm').action = `/api/timeEntries/${entryId}`;
+                    document.getElementById('editTaskId').value = taskId;
+                    document.getElementById('editDescription').value = description;
+                    document.getElementById('editDate').value = date;
+                    document.getElementById('editStartTime').value = startTime;
+                    document.getElementById('editEndTime').value = endTime;
+
+                    // Show the modal
+                    new bootstrap.Modal(document.getElementById('editTimeEntryModal')).show();
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

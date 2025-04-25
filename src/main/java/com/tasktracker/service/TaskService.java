@@ -2,6 +2,7 @@ package com.tasktracker.service;
 
 import com.tasktracker.dto.TaskDto;
 import com.tasktracker.model.Task.TaskStatus;
+import com.tasktracker.model.Task;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,4 +25,6 @@ public interface TaskService {
     TaskDto updateTask(Long id, TaskDto taskDto);
 
     void deleteTask(Long id);
+
+    List<Task> getTasksByUsername(String username);
 }

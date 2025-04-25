@@ -149,4 +149,10 @@ public class TaskServiceImpl implements TaskService {
                 .userId(task.getUser().getId())
                 .build();
     }
+
+    @Override
+    public List<Task> getTasksByUsername(String username) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getTasksByUsername'");
+    }
 }

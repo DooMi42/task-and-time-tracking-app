@@ -1,58 +1,128 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <title>Task Tracker Report</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 20px;
-            border: 1px solid #ccc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #ffffff;
             border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
         }
+
+        .header {
+            background-color: #0d6efd;
+            color: white;
+            padding: 15px 30px;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            margin: -30px -30px 20px -30px;
+        }
+
         h1 {
-            color: #333;
+            margin: 0;
+            font-size: 24px;
+            font-weight: 500;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            margin-bottom: 20px;
         }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
+
+        th,
+        td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
             text-align: left;
         }
+
         th {
-            background-color: #f2f2f2;
+            background-color: #f8f9fa;
+            font-weight: 500;
+        }
+
+        .status-completed {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-inprogress {
+            background-color: #fff3cd;
+            color: #664d03;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #6c757d;
         }
     </style>
 </head>
-<body>
-    <h1>Task Tracker Report</h1>
-    <p>Dear <span th:text="${userName}">User</span>,</p>
-    <p>Here is your report for the specified period:</p>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>Task Name</th>
-                <th>Status</th>
-                <th>Time Spent</th>
-                <th>Created On</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr th:each="task : ${tasks}">
-                <td th:text="${task.name}">Task Name</td>
-                <td th:text="${task.status}">Status</td>
-                <td th:text="${task.timeSpent}">Time Spent</td>
-                <td th:text="${task.createdOn}">Created On</td>
-            </tr>
-        </tbody>
-    </table>
 
-    <p>Thank you for using Task Tracker!</p>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Task Tracker</h1>
+        </div>
+
+        <p>Dear <strong th:text="${userName}">User</strong>,</p>
+        <p>Here is your task report for the specified period:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Task Name</th>
+                    <th>Status</th>
+                    <th>Time Spent</th>
+                    <th>Created On</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="task : ${tasks}">
+                    <td th:text="${task.name}">Task Name</td>
+                    <td>
+                        <span th:if="${task.status == 'COMPLETED'}" class="status-completed"
+                            th:text="${task.status}">Completed</span>
+                        <span th:if="${task.status != 'COMPLETED'}" class="status-inprogress"
+                            th:text="${task.status}">In Progress</span>
+                    </td>
+                    <td th:text="${task.timeSpent}">Time Spent</td>
+                    <td th:text="${task.createdOn}">Created On</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <p>Thank you for using Task Tracker!</p>
+            <p>If you have any questions, please contact our support team.</p>
+        </div>
+    </div>
 </body>
+
 </html>

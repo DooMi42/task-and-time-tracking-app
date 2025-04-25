@@ -201,4 +201,16 @@ public class TimeEntryServiceImpl implements TimeEntryService {
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<TimeEntry> getTimeEntriesByUsername(String username) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getTimeEntriesByUsername'");
+    }
+
+    @Override
+    public List<TimeEntry> getTimeEntriesByTaskId(Long taskId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getTimeEntriesByTaskId'");
+    }
 }
