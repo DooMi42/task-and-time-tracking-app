@@ -36,31 +36,34 @@ public class ViewController {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String username = auth.getName();
 
-            // Log the username for debugging
             System.out.println("Loading tasks for user: " + username);
 
-            // Add detailed error logging
             try {
                 List<Task> tasks = taskService.getTasksByUsername(username);
                 System.out.println("Found " + tasks.size() + " tasks for user " + username);
+
+                // Handle tasks with null values that might cause display issues
+                tasks.forEach(task -> {
+                    if (task.getTitle() == null)
+                        task.setTitle("");
+                    if (task.getDescription() == null)
+                        task.setDescription("");
+                });
+
                 model.addAttribute("tasks", tasks);
             } catch (Exception taskEx) {
                 System.err.println("Error loading tasks: " + taskEx.getMessage());
                 taskEx.printStackTrace();
-                // Add empty list to prevent UI errors
                 model.addAttribute("tasks", new ArrayList<>());
+                model.addAttribute("errorMessage", "Error loading tasks: " + taskEx.getMessage());
             }
 
-            // Add a new task object for the form
+            // Always add a new task object for the form
             model.addAttribute("newTask", new Task());
-
             return "tasks";
         } catch (Exception e) {
-            // Log the exception
-            System.err.println("Critical error in tasks view: " + e.getMessage());
             e.printStackTrace();
-            model.addAttribute("errorMessage", "Error loading tasks: " + e.getMessage());
-            // Still add empty lists so the page doesn't crash
+            model.addAttribute("errorMessage", "Critical error: " + e.getMessage());
             model.addAttribute("tasks", new ArrayList<>());
             model.addAttribute("newTask", new Task());
             return "tasks"; // Return tasks view instead of error view

@@ -35,6 +35,9 @@ public class TaskFormController {
             User user = userService.getUserByUsername(username);
             task.setUser(user);
 
+            // Explicitly set project to null if it's not used yet
+            task.setProject(null);
+
             // Set default values
             task.setCreatedAt(LocalDateTime.now());
             if (task.getStatus() == null) {
@@ -51,7 +54,7 @@ public class TaskFormController {
         } catch (Exception e) {
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "Failed to create task: " + e.getMessage());
-            return "redirect:/error";
+            return "redirect:/tasks"; // Redirect back to tasks instead of error page
         }
     }
 }

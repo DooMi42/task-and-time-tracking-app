@@ -68,7 +68,9 @@ public class SecurityConfig {
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(authorize -> authorize
                                                 // Use requestMatchers instead of antMatchers
-                                                .requestMatchers("/login", "/register", "/css/**", "/js/**").permitAll()
+                                                .requestMatchers("/login", "/register", "/css/**", "/js/**",
+                                                                "/debug/**")
+                                                .permitAll()
                                                 .anyRequest().authenticated())
                                 .formLogin(form -> form
                                                 .loginPage("/login")
