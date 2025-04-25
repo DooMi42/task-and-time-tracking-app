@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDate;
@@ -190,5 +192,28 @@ public class TaskServiceImpl implements TaskService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
         return taskRepository.findByUser(user);
+    }
+
+    // Add this temporary debugging endpoint
+    @GetMapping("/debug/tasks")
+    public String debugTasks(Model model) {
+        try {
+            // Get all tasks directly from repository
+            List<Task> allTasks = taskRepository.findAll();
+            System.out.println("Total tasks in database: " + allTasks.size());
+
+            for (Task task : allTasks) {
+                System.out.println("Task ID: " + task.getId() +
+                        ", Title: " + task.getTitle() +
+                        ", User: " + (task.getUser() != null ? task.getUser().getUsername() : "null"));
+            }
+
+            model.addAttribute("allTasks", allTasks);
+            return "debug";
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("error", e.getMessage());
+            return "debug";
+        }
     }
 }
