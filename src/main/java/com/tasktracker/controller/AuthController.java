@@ -32,14 +32,22 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
-        try {
-            userService.registerUser(registerRequest);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("User registered successfully");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    public ResponseEntity<?> register(@RequestBody User user) {
+        // Check if username already exists
+        if (userService.existsByUsername(user.getUsername())) {
+            return ResponseEntity.badRequest().body("Username is already taken");
         }
+
+        // Check if email already exists
+        if (userService.existsByEmail(user.getEmail())) {
+            return ResponseEntity.badRequest().body("Email is already in use");
+        }
+
+        // Create new user's account (with encoded password)
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userService.save(user);
+
+        return ResponseEntity.ok("User registered successfully");
     }
 
     @PostMapping("/login")

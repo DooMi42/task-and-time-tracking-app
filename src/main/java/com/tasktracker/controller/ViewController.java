@@ -2,6 +2,7 @@ package com.tasktracker.controller;
 
 import com.tasktracker.model.Task;
 import com.tasktracker.model.TimeEntry;
+import com.tasktracker.model.User;
 import com.tasktracker.service.TaskService;
 import com.tasktracker.service.TimeEntryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,5 +60,11 @@ public class ViewController {
         model.addAttribute("tasks", taskService.getTasksByUsername(username));
 
         return "timeEntries";
+    }
+
+    @GetMapping("/register")
+    public String register(Model model) {
+        model.addAttribute("user", new User());
+        return "register";
     }
 }
