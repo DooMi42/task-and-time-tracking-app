@@ -1,16 +1,19 @@
 package com.tasktracker.service.impl;
 
 import com.tasktracker.dto.TimeEntryDto;
+import com.tasktracker.dto.TimeEntryRequest;
 import com.tasktracker.model.Task;
 import com.tasktracker.model.TimeEntry;
 import com.tasktracker.model.User;
 import com.tasktracker.repository.TaskRepository;
 import com.tasktracker.repository.TimeEntryRepository;
-import com.tasktracker.repository.UserRepository; // Add this import
+import com.tasktracker.repository.UserRepository;
 import com.tasktracker.service.TimeEntryService;
 import com.tasktracker.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UsernameNotFoundException; // Add this import
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +21,8 @@ import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,11 +30,40 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TimeEntryServiceImpl implements TimeEntryService {
+    private static final Logger logger = LoggerFactory.getLogger(TimeEntryServiceImpl.class);
 
     private final TimeEntryRepository timeEntryRepository;
     private final TaskRepository taskRepository;
-    private final UserRepository userRepository; // Add this field
+    private final UserRepository userRepository;
     private final UserService userService;
+
+    @Override
+    @Transactional
+    public TimeEntry saveTimeEntry(TimeEntry timeEntry) {
+        // Ensure user is set if it's null
+        if (timeEntry.getUser() == null) {
+            User currentUser = userService.getCurrentUser();
+            timeEntry.setUser(currentUser);
+        }
+
+        logger.debug("Saving time entry: {}", timeEntry);
+        return timeEntryRepository.save(timeEntry);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TimeEntry getTimeEntryById(Long id) {
+        return timeEntryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Time entry not found with id: " + id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TimeEntryDto getTimeEntryDtoById(Long id) {
+        TimeEntry timeEntry = getTimeEntryById(id);
+        validateUserOwnsTimeEntry(timeEntry);
+        return mapToDto(timeEntry);
+    }
 
     @Override
     @Transactional
@@ -73,14 +107,6 @@ public class TimeEntryServiceImpl implements TimeEntryService {
         timeEntry.setEndTime(LocalDateTime.now());
         TimeEntry savedEntry = timeEntryRepository.save(timeEntry);
         return mapToDto(savedEntry);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public TimeEntryDto getTimeEntryById(Long id) {
-        TimeEntry timeEntry = findTimeEntryById(id);
-        validateUserOwnsTimeEntry(timeEntry);
-        return mapToDto(timeEntry);
     }
 
     @Override
@@ -166,19 +192,6 @@ public class TimeEntryServiceImpl implements TimeEntryService {
         }
     }
 
-    private TimeEntryDto mapToDto(TimeEntry timeEntry) {
-        return TimeEntryDto.builder()
-                .id(timeEntry.getId())
-                .taskId(timeEntry.getTask().getId())
-                .userId(timeEntry.getUser().getId())
-                .startTime(timeEntry.getStartTime())
-                .endTime(timeEntry.getEndTime())
-                .description(timeEntry.getDescription())
-                .durationInHours(timeEntry.getDurationInHours())
-                .running(timeEntry.isRunning())
-                .build();
-    }
-
     @Override
     public TimeEntryDto createTimeEntry(TimeEntryDto timeEntryDto) {
         User currentUser = userService.getCurrentUser();
@@ -199,10 +212,15 @@ public class TimeEntryServiceImpl implements TimeEntryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TimeEntryDto> getAllTimeEntries() {
+    public List<TimeEntryDto> getAllTimeEntriesDto() {
         return timeEntryRepository.findAll().stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TimeEntry> getAllTimeEntries() {
+        return timeEntryRepository.findAll();
     }
 
     @Override
@@ -217,5 +235,87 @@ public class TimeEntryServiceImpl implements TimeEntryService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + taskId));
         return timeEntryRepository.findByTask(task);
+    }
+
+    @Override
+    public TimeEntry createTimeEntryFromRequest(TimeEntryRequest request) {
+        if (request == null || request.getTaskId() == null) {
+            throw new IllegalArgumentException("Invalid request: missing task ID");
+        }
+
+        Task task = taskRepository.findById(request.getTaskId())
+                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + request.getTaskId()));
+
+        User currentUser = userService.getCurrentUser();
+
+        TimeEntry timeEntry = new TimeEntry();
+        timeEntry.setTask(task);
+        timeEntry.setUser(currentUser);
+        timeEntry.setDescription(request.getDescription());
+
+        try {
+            LocalDateTime startTime = parseDateTime(request.getStartTime());
+            LocalDateTime endTime = parseDateTime(request.getEndTime());
+
+            if (endTime != null && startTime != null && endTime.isBefore(startTime)) {
+                throw new IllegalArgumentException("End time cannot be before start time");
+            }
+
+            timeEntry.setStartTime(startTime);
+            timeEntry.setEndTime(endTime);
+        } catch (DateTimeParseException e) {
+            logger.error("Error parsing date/time: {}", e.getMessage());
+            throw new IllegalArgumentException("Invalid date format: " + e.getMessage());
+        }
+
+        return timeEntry;
+    }
+
+    private TimeEntryDto mapToDto(TimeEntry timeEntry) {
+        return TimeEntryDto.builder()
+                .id(timeEntry.getId())
+                .taskId(timeEntry.getTask().getId())
+                .userId(timeEntry.getUser() != null ? timeEntry.getUser().getId() : null)
+                .startTime(timeEntry.getStartTime())
+                .endTime(timeEntry.getEndTime())
+                .description(timeEntry.getDescription())
+                .durationInHours(timeEntry.getDurationInHours())
+                .running(timeEntry.isRunning())
+                .build();
+    }
+
+    private LocalDateTime parseDateTime(String dateTimeStr) {
+        if (dateTimeStr == null || dateTimeStr.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            // Try ISO format first (yyyy-MM-ddTHH:mm:ss)
+            return LocalDateTime.parse(dateTimeStr);
+        } catch (DateTimeParseException e) {
+            try {
+                // Try ISO format without seconds (yyyy-MM-ddTHH:mm)
+                if (dateTimeStr.contains("T") && dateTimeStr.split("T")[1].length() == 5) {
+                    return LocalDateTime.parse(dateTimeStr + ":00");
+                }
+
+                // Try format with space separator (yyyy-MM-dd HH:mm)
+                if (dateTimeStr.contains(" ")) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+                    return LocalDateTime.parse(dateTimeStr, formatter);
+                }
+
+                // Try date-only format (yyyy-MM-dd)
+                if (!dateTimeStr.contains("T") && !dateTimeStr.contains(" ")) {
+                    return LocalDateTime.parse(dateTimeStr + "T00:00:00");
+                }
+
+                logger.error("Unable to parse datetime string: {}", dateTimeStr);
+                throw new IllegalArgumentException("Unsupported datetime format: " + dateTimeStr);
+            } catch (Exception ex) {
+                logger.error("Error parsing datetime: {}", ex.getMessage());
+                throw new IllegalArgumentException("Failed to parse datetime: " + dateTimeStr);
+            }
+        }
     }
 }

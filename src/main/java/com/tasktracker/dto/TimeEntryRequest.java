@@ -10,6 +10,14 @@ public class TimeEntryRequest {
     public TimeEntryRequest() {
     }
 
+    // Constructor with all fields
+    public TimeEntryRequest(Long taskId, String description, String startTime, String endTime) {
+        this.taskId = taskId;
+        this.description = description;
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
+
     // Getters and setters
     public Long getTaskId() {
         return taskId;

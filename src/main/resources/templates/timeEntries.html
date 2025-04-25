@@ -222,50 +222,8 @@
         });
     </script>
     <script>
-        document.querySelector('#addTimeEntryModal form').addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-
-            // Parse the date and time values to create proper datetime objects
-            const date = formData.get('date');
-            const startTime = formData.get('startTime');
-            const endTime = formData.get('endTime');
-
-            const startDateTime = `${date}T${startTime}:00`;
-            const endDateTime = `${date}T${endTime}:00`;
-
-            const timeEntryData = {
-                taskId: formData.get('taskId'),
-                description: formData.get('description'),
-                startTime: startDateTime,
-                endTime: endDateTime
-            };
-
-            fetch('/api/time-entries', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(timeEntryData)
-            })
-                .then(response => {
-                    if (response.ok) {
-                        bootstrap.Modal.getInstance(document.getElementById('addTimeEntryModal')).hide();
-                        window.location.reload();
-                    } else {
-                        response.text().then(text => {
-                            alert('Failed to create time entry: ' + text);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        });
-    </script>
-    <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Handle time entry form submission
             const addTimeEntryForm = document.querySelector('#addTimeEntryModal form');
             if (addTimeEntryForm) {
                 addTimeEntryForm.addEventListener('submit', function (e) {
@@ -278,9 +236,9 @@
                     const startTime = formData.get('startTime');
                     const endTime = formData.get('endTime');
 
-                    // Convert date and time to ISO format
-                    const startDateTime = date + 'T' + startTime + ':00';
-                    const endDateTime = date + 'T' + endTime + ':00';
+                    // Format as ISO date-time strings (YYYY-MM-DDThh:mm:ss)
+                    const startDateTime = date + 'T' + startTime;
+                    const endDateTime = date + 'T' + endTime;
 
                     const timeEntryData = {
                         taskId: taskId,
@@ -289,34 +247,32 @@
                         endTime: endDateTime
                     };
 
-                    // Log what we're sending
-                    console.log('Sending time entry data:', timeEntryData);
+                    console.log('Submitting time entry data:', timeEntryData);
 
                     fetch('/api/time-entries', {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
                         },
                         body: JSON.stringify(timeEntryData)
                     })
                         .then(response => {
-                            if (response.ok) {
-                                return response.json().then(data => {
-                                    // Hide modal
-                                    bootstrap.Modal.getInstance(document.getElementById('addTimeEntryModal')).hide();
-                                    // Reload page
-                                    window.location.reload();
-                                });
-                            } else {
+                            if (!response.ok) {
                                 return response.text().then(text => {
-                                    console.error('Error response:', text);
-                                    alert('Failed to create time entry: ' + text);
+                                    throw new Error(text);
                                 });
                             }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Success:', data);
+                            // Close modal and reload page
+                            bootstrap.Modal.getInstance(document.getElementById('addTimeEntryModal')).hide();
+                            window.location.reload();
                         })
                         .catch(error => {
                             console.error('Error:', error);
-                            alert('An error occurred: ' + error);
+                            alert('Failed to create time entry: ' + error.message);
                         });
                 });
             }

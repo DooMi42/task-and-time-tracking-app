@@ -28,10 +28,10 @@ public class TimeEntry {
     private Task task;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id") // Making this optional as we'll set it in service layer
     private User user;
 
-    @Column(name = "start_time", nullable = false)
+    @Column(name = "start_time") // Removed nullable=false to allow for more flexibility
     private LocalDateTime startTime;
 
     @Column(name = "end_time")
@@ -50,7 +50,7 @@ public class TimeEntry {
 
     @Transient
     public boolean isRunning() {
-        return endTime == null;
+        return startTime != null && endTime == null;
     }
 
     @Transient
@@ -64,17 +64,16 @@ public class TimeEntry {
         return seconds / 3600.0;
     }
 
+    @Transient
     public int getDurationInMinutes() {
         if (startTime == null || endTime == null) {
             return 0;
         }
 
-        // Calculate duration in minutes
-        long startMinutes = startTime.getHour() * 60 + startTime.getMinute();
-        long endMinutes = endTime.getHour() * 60 + endTime.getMinute();
-        return (int) (endMinutes - startMinutes);
+        return (int) Duration.between(startTime, endTime).toMinutes();
     }
 
+    // Fix toString to avoid circular references
     @Override
     public String toString() {
         return "TimeEntry{" +
@@ -83,6 +82,7 @@ public class TimeEntry {
                 ", startTime=" + startTime +
                 ", endTime=" + endTime +
                 ", taskId=" + (task != null ? task.getId() : null) +
+                ", userId=" + (user != null ? user.getId() : null) +
                 '}';
     }
 }

@@ -1,17 +1,20 @@
 package com.tasktracker.service;
 
 import com.tasktracker.dto.TimeEntryDto;
+import com.tasktracker.dto.TimeEntryRequest;
 import com.tasktracker.model.TimeEntry;
+import com.tasktracker.model.User;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public interface TimeEntryService {
+    // DTO-based methods for API operations
     TimeEntryDto startTimer(Long taskId);
 
     TimeEntryDto stopTimer(Long timeEntryId);
 
-    TimeEntryDto getTimeEntryById(Long id);
+    TimeEntryDto getTimeEntryDtoById(Long id);
 
     List<TimeEntryDto> getTimeEntriesByTask(Long taskId);
 
@@ -23,13 +26,23 @@ public interface TimeEntryService {
 
     TimeEntryDto updateTimeEntry(Long id, TimeEntryDto timeEntryDto);
 
-    void deleteTimeEntry(Long id);
-
     TimeEntryDto createTimeEntry(TimeEntryDto timeEntryDto);
 
-    List<TimeEntryDto> getAllTimeEntries();
+    List<TimeEntryDto> getAllTimeEntriesDto();
+
+    void deleteTimeEntry(Long id);
+
+    // Entity-based methods for internal use
+    TimeEntry saveTimeEntry(TimeEntry timeEntry);
+
+    TimeEntry getTimeEntryById(Long id);
+
+    List<TimeEntry> getAllTimeEntries();
 
     List<TimeEntry> getTimeEntriesByUsername(String username);
 
     List<TimeEntry> getTimeEntriesByTaskId(Long taskId);
+
+    // Request-to-Entity conversion for controller use
+    TimeEntry createTimeEntryFromRequest(TimeEntryRequest request);
 }
