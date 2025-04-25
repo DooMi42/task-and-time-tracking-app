@@ -2,19 +2,27 @@ package com.tasktracker.controller;
 
 import com.tasktracker.dto.TimeEntryDto;
 import com.tasktracker.dto.TimeEntryRequest;
+import com.tasktracker.model.Task;
 import com.tasktracker.model.TimeEntry;
+import com.tasktracker.model.User;
 import com.tasktracker.service.TaskService;
 import com.tasktracker.service.TimeEntryService;
+import com.tasktracker.repository.TimeEntryRepository;
+import com.tasktracker.repository.UserRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/time-entries")
@@ -27,45 +35,83 @@ public class TimeEntryController {
     @Autowired
     private TaskService taskService;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private TimeEntryRepository timeEntryRepository;
+
     @PostMapping
     public ResponseEntity<?> createTimeEntry(@RequestBody TimeEntryRequest request) {
         try {
             logger.info("Received time entry request: {}", request);
 
-            // Use the new service method to convert request to entity
-            TimeEntry timeEntry = timeEntryService.createTimeEntryFromRequest(request);
+            if (request == null || request.getTaskId() == null) {
+                return ResponseEntity.badRequest().body("Missing required task ID");
+            }
 
-            // Save the time entry
-            TimeEntry savedEntry = timeEntryService.saveTimeEntry(timeEntry);
+            // Create a simplified process - get task, create entry, save it
+            Task task = taskService.getTaskById(request.getTaskId());
+            if (task == null) {
+                return ResponseEntity.badRequest().body("Task not found");
+            }
 
-            logger.info("Successfully saved time entry with ID: {}", savedEntry.getId());
+            // Parse dates to make sure they're valid
+            LocalDateTime startTime;
+            LocalDateTime endTime;
+            try {
+                startTime = parseDateTime(request.getStartTime());
+                endTime = parseDateTime(request.getEndTime());
+            } catch (Exception e) {
+                logger.error("Date parsing error", e);
+                return ResponseEntity.badRequest().body("Invalid date format: " + e.getMessage());
+            }
 
-            // Convert to DTO for response
-            TimeEntryDto responseDto = TimeEntryDto.builder()
-                    .id(savedEntry.getId())
-                    .taskId(savedEntry.getTask().getId())
-                    .userId(savedEntry.getUser().getId())
-                    .startTime(savedEntry.getStartTime())
-                    .endTime(savedEntry.getEndTime())
-                    .description(savedEntry.getDescription())
-                    .durationInHours(savedEntry.getDurationInHours())
-                    .running(savedEntry.isRunning())
-                    .build();
+            // Create the time entry directly
+            TimeEntry timeEntry = new TimeEntry();
+            timeEntry.setTask(task);
+            timeEntry.setDescription(request.getDescription());
+            timeEntry.setStartTime(startTime);
+            timeEntry.setEndTime(endTime);
 
-            return ResponseEntity.ok(responseDto);
-        } catch (IllegalArgumentException e) {
-            logger.error("Validation error: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (EntityNotFoundException e) {
-            logger.error("Entity not found: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (SecurityException e) {
-            logger.error("Security error: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+            // Get current user
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            timeEntry.setUser(user);
+
+            // Save the entry
+            TimeEntry savedEntry = timeEntryRepository.save(timeEntry);
+
+            // Return a simple success response
+            return ResponseEntity.ok(Map.of(
+                    "id", savedEntry.getId(),
+                    "message", "Time entry created successfully"));
         } catch (Exception e) {
             logger.error("Error creating time entry", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to create time entry: " + e.getMessage());
+        }
+    }
+
+    // Add this helper method to the controller
+    private LocalDateTime parseDateTime(String dateTimeStr) {
+        if (dateTimeStr == null || dateTimeStr.isEmpty()) {
+            throw new IllegalArgumentException("Date/time cannot be empty");
+        }
+
+        try {
+            // Try standard ISO format
+            return LocalDateTime.parse(dateTimeStr);
+        } catch (Exception e) {
+            // Handle common issues with format
+            if (dateTimeStr.length() == 16 && dateTimeStr.contains("T")) {
+                // Format like "2023-04-25T14:30" missing seconds
+                return LocalDateTime.parse(dateTimeStr + ":00");
+            } else {
+                throw new IllegalArgumentException("Unsupported date format: " + dateTimeStr);
+            }
         }
     }
 
