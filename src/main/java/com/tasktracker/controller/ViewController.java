@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class ViewController {
@@ -42,23 +44,29 @@ public class ViewController {
                 List<Task> tasks = taskService.getTasksByUsername(username);
                 System.out.println("Found " + tasks.size() + " tasks for user " + username);
 
-                // Handle null values and set defaults to prevent UI errors
+                // Handle null values and set defaults
                 tasks.forEach(task -> {
                     if (task.getTitle() == null)
                         task.setTitle("");
                     if (task.getDescription() == null)
                         task.setDescription("");
-
-                    // Set default status if null
                     if (task.getStatus() == null)
                         task.setStatus(Task.TaskStatus.TODO);
-
-                    // Handle potential null priority
                     if (task.getPriority() == null)
                         task.setPriority(Task.TaskPriority.MEDIUM);
                 });
 
+                // Create a map of task IDs to "completed" status for the template
+                Map<Long, Boolean> completedMap = new HashMap<>();
+                for (Task task : tasks) {
+                    // Consider a task completed if its status is DONE
+                    boolean isCompleted = Task.TaskStatus.DONE.equals(task.getStatus());
+                    completedMap.put(task.getId(), isCompleted);
+                }
+
                 model.addAttribute("tasks", tasks);
+                model.addAttribute("completedMap", completedMap); // Add this map for the template
+
             } catch (Exception taskEx) {
                 System.err.println("Error loading tasks: " + taskEx.getMessage());
                 taskEx.printStackTrace();
@@ -68,7 +76,7 @@ public class ViewController {
 
             // Always add a new task object for the form
             Task newTask = new Task();
-            newTask.setStatus(Task.TaskStatus.TODO); // Set default status
+            newTask.setStatus(Task.TaskStatus.TODO);
             model.addAttribute("newTask", newTask);
 
             return "tasks";
@@ -77,7 +85,7 @@ public class ViewController {
             model.addAttribute("errorMessage", "Critical error in task view: " + e.getMessage());
             model.addAttribute("tasks", new ArrayList<>());
             model.addAttribute("newTask", new Task());
-            return "tasks"; // Stay on tasks page with error message
+            return "tasks";
         }
     }
 

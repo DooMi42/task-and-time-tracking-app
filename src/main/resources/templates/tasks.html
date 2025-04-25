@@ -72,8 +72,10 @@
                                 Status: <span th:text="${task.status}">Status</span>
                             </p>
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="badge bg-success" th:if="${task.completed}">Completed</span>
-                                <span class="badge bg-warning" th:if="${!task.completed}">In Progress</span>
+                                <span class="badge bg-success"
+                                    th:if="${completedMap != null && completedMap[task.id]}">Completed</span>
+                                <span class="badge bg-warning"
+                                    th:unless="${completedMap != null && completedMap[task.id]}">In Progress</span>
                                 <div>
                                     <a th:href="@{/timeEntries(taskId=${task.id})}"
                                         class="btn btn-sm btn-outline-secondary">
@@ -83,7 +85,7 @@
                                         th:data-task-id="${task.id}" th:data-task-title="${task.title}"
                                         th:data-task-description="${task.description}"
                                         th:data-task-due-date="${#temporals.format(task.dueDate, 'yyyy-MM-dd')}"
-                                        th:data-task-completed="${task.completed}">
+                                        th:data-task-status="${task.status}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <form class="d-inline" th:action="@{/api/tasks/{id}(id=${task.id})}" method="post">
@@ -170,9 +172,15 @@
                             <label for="editDueDate" class="form-label">Due Date</label>
                             <input type="date" class="form-control" id="editDueDate" name="dueDate" required>
                         </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="editCompleted" name="completed">
-                            <label class="form-check-label" for="editCompleted">Completed</label>
+                        <!-- Replace the completed checkbox with this status dropdown -->
+                        <div class="mb-3">
+                            <label for="editStatus" class="form-label">Status</label>
+                            <select class="form-select" id="editStatus" name="status">
+                                <option value="TODO">To Do</option>
+                                <option value="IN_PROGRESS">In Progress</option>
+                                <option value="DONE">Completed</option>
+                                <option value="PENDING">Pending</option>
+                            </select>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -194,13 +202,18 @@
                     const title = this.getAttribute('data-task-title');
                     const description = this.getAttribute('data-task-description');
                     const dueDate = this.getAttribute('data-task-due-date');
-                    const completed = this.getAttribute('data-task-completed') === 'true';
+                    const status = this.getAttribute('data-task-status');
 
                     document.getElementById('editTaskForm').action = `/api/tasks/${taskId}`;
                     document.getElementById('editTitle').value = title;
                     document.getElementById('editDescription').value = description;
                     document.getElementById('editDueDate').value = dueDate;
-                    document.getElementById('editCompleted').checked = completed;
+
+                    // Set the status dropdown
+                    const statusSelect = document.getElementById('editStatus');
+                    if (statusSelect) {
+                        statusSelect.value = status;
+                    }
 
                     // Show the modal
                     new bootstrap.Modal(document.getElementById('editTaskModal')).show();
