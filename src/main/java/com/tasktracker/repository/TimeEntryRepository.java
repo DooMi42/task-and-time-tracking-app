@@ -21,4 +21,8 @@ public interface TimeEntryRepository extends JpaRepository<TimeEntry, Long> {
 
     @Query("SELECT t FROM TimeEntry t WHERE t.user = ?1 AND t.endTime IS NULL")
     Optional<TimeEntry> findRunningTimeEntry(User user);
+
+    List<TimeEntry> findByUserUsername(String username);
+
+    List<TimeEntry> findByTaskId(Long taskId);
 }

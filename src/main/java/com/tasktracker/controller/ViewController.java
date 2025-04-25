@@ -31,14 +31,21 @@ public class ViewController {
 
     @GetMapping("/tasks")
     public String tasks(Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
 
-        List<Task> tasks = taskService.getTasksByUsername(username);
-        model.addAttribute("tasks", tasks);
-        model.addAttribute("newTask", new Task());
+            List<Task> tasks = taskService.getTasksByUsername(username);
+            model.addAttribute("tasks", tasks);
+            model.addAttribute("newTask", new Task());
 
-        return "tasks";
+            return "tasks";
+        } catch (Exception e) {
+            // Log the exception
+            e.printStackTrace();
+            model.addAttribute("errorMessage", "Error loading tasks: " + e.getMessage());
+            return "error"; // Create a simple error.html template
+        }
     }
 
     @GetMapping("/timeEntries")
