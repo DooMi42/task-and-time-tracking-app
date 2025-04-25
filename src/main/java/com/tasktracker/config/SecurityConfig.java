@@ -16,10 +16,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -47,46 +56,34 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                                                 // Protect all other API endpoints
                                                 .anyRequest().authenticated())
-                                // Configure session management to allow both JWT and session auth
+                                // Allow session authentication for API calls
                                 .sessionManagement(session -> session
-                                                // Change from STATELESS to NEVER to allow existing sessions
-                                                .sessionCreationPolicy(SessionCreationPolicy.NEVER))
+                                                // Use IF_REQUIRED instead of NEVER
+                                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                                 .exceptionHandling(exceptions -> exceptions
-                                                .authenticationEntryPoint(
-                                                                (AuthenticationEntryPoint) jwtAuthenticationEntryPoint));
+                                                .authenticationEntryPoint(jwtAuthenticationEntryPoint));
 
-                // Add JWT filter for API requests
-                http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                // Add JWT filter but make it skip requests with valid session auth
+                http.addFilterBefore(new OncePerRequestFilter() {
+                        @Override
+                        protected void doFilterInternal(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        FilterChain filterChain) throws ServletException, IOException {
+                                // Check if user is already authenticated via session
+                                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                                if (auth != null && auth.isAuthenticated()
+                                                && !(auth instanceof AnonymousAuthenticationToken)) {
+                                        // User is already authenticated via session, skip JWT processing
+                                        filterChain.doFilter(request, response);
+                                        return;
+                                }
+                                // Otherwise use JWT filter
+                                jwtRequestFilter.doFilter(request, response, filterChain);
+                        }
+                }, UsernamePasswordAuthenticationFilter.class);
 
-                // Make sure security context is properly configured
+                // Share security context
                 http.securityContext(securityContext -> securityContext.requireExplicitSave(false));
-
-                return http.build();
-        }
-
-        @Bean
-        @Order(2)
-        public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
-                http
-                                .cors(cors -> {
-                                })
-                                // Enable CSRF for web views - don't disable it here!
-                                .csrf(csrf -> {
-                                })
-                                .authorizeHttpRequests(authorize -> authorize
-                                                .requestMatchers("/login", "/register", "/css/**", "/js/**",
-                                                                "/debug/**")
-                                                .permitAll()
-                                                .anyRequest().authenticated())
-                                .formLogin(form -> form
-                                                .loginPage("/login")
-                                                .loginProcessingUrl("/perform_login")
-                                                .defaultSuccessUrl("/tasks", true)
-                                                .permitAll())
-                                .logout(logout -> logout
-                                                .logoutUrl("/perform_logout")
-                                                .logoutSuccessUrl("/login?logout")
-                                                .permitAll());
 
                 return http.build();
         }
