@@ -44,7 +44,12 @@ public class TaskController {
         try {
             // Get current authenticated user
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            logger.debug("Authentication state: {}", auth);
+
+            // Add more debug info
+            logger.debug("Authentication: {}, Principal: {}, Details: {}",
+                    auth,
+                    auth != null ? auth.getPrincipal() : "null",
+                    auth != null ? auth.getDetails() : "null");
 
             if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
                 logger.error("Not properly authenticated: {}", auth);
@@ -55,20 +60,30 @@ public class TaskController {
             String username = auth.getName();
             logger.info("Getting tasks for user: {}", username);
 
-            // Get tasks for the current user
-            List<Task> tasks = taskService.getTasksByUsername(username);
-            if (tasks == null) {
-                logger.warn("TaskService returned null task list for user: {}", username);
-                return ResponseEntity.ok(Collections.emptyList());
+            // Try-catch specifically for the service call to get better error info
+            try {
+                // Get tasks for the current user
+                List<Task> tasks = taskService.getTasksByUsername(username);
+
+                if (tasks == null) {
+                    logger.warn("TaskService returned null task list for user: {}", username);
+                    return ResponseEntity.ok(Collections.emptyList());
+                }
+
+                // Log each task for debugging
+                tasks.forEach(task -> logger.debug("Task: id={}, title={}", task.getId(), task.getTitle()));
+
+                // Convert Tasks to TaskDtos
+                List<TaskDto> taskDtos = tasks.stream()
+                        .map(this::convertToDto)
+                        .collect(Collectors.toList());
+
+                logger.info("Returning {} tasks for user {}", taskDtos.size(), username);
+                return ResponseEntity.ok(taskDtos);
+            } catch (Exception e) {
+                logger.error("Error in TaskService.getTasksByUsername", e);
+                throw e; // Re-throw to be caught by outer catch
             }
-
-            // Convert Tasks to TaskDtos
-            List<TaskDto> taskDtos = tasks.stream()
-                    .map(this::convertToDto)
-                    .collect(Collectors.toList());
-
-            logger.info("Returning {} tasks for user {}", taskDtos.size(), username);
-            return ResponseEntity.ok(taskDtos);
         } catch (Exception e) {
             logger.error("Error fetching tasks", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

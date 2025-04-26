@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDate;
@@ -28,6 +30,7 @@ public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final UserService userService;
     private final UserRepository userRepository;
+    private static final Logger logger = LoggerFactory.getLogger(TaskServiceImpl.class);
 
     @Override
     @Transactional
@@ -191,21 +194,33 @@ public class TaskServiceImpl implements TaskService {
     @Transactional(readOnly = true)
     public List<Task> getTasksByUsername(String username) {
         try {
+            logger.debug("Finding tasks for username: {}", username);
+
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
+            logger.debug("Found user: id={}, username={}", user.getId(), user.getUsername());
+
             List<Task> tasks = taskRepository.findByUser(user);
+            logger.debug("Found {} tasks for user {}", tasks.size(), username);
 
             // Initialize any lazy collections if needed
             for (Task task : tasks) {
                 if (task.getTimeEntries() != null) {
-                    task.getTimeEntries().size(); // Force initialization
+                    try {
+                        // Use size() to initialize but catch any exceptions
+                        int size = task.getTimeEntries().size();
+                        logger.debug("Task {} has {} time entries", task.getId(), size);
+                    } catch (Exception e) {
+                        logger.warn("Could not initialize time entries for task {}: {}", task.getId(), e.getMessage());
+                        // Just continue, don't fail the whole operation
+                    }
                 }
             }
 
             return tasks;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error fetching tasks for username: " + username, e);
             throw new RuntimeException("Error fetching tasks: " + e.getMessage(), e);
         }
     }
