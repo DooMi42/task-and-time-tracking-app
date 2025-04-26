@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/time-entries")
+@RequestMapping("/api/timeEntries") // Changed from "/api/time-entries"
 public class TimeEntryController {
     private static final Logger logger = LoggerFactory.getLogger(TimeEntryController.class);
 

@@ -1,8 +1,10 @@
 package com.tasktracker.controller;
 
 import com.tasktracker.model.Task;
+import com.tasktracker.model.TimeEntry;
 import com.tasktracker.model.User;
 import com.tasktracker.repository.TaskRepository;
+import com.tasktracker.repository.TimeEntryRepository;
 import com.tasktracker.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -21,6 +23,9 @@ public class DebugController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TimeEntryRepository timeEntryRepository;
 
     @GetMapping("/tasks")
     public String debugTasks(Model model) {
@@ -56,6 +61,29 @@ public class DebugController {
             }
 
             model.addAttribute("allUsers", allUsers);
+            return "debug";
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("error", e.getMessage());
+            return "debug";
+        }
+    }
+
+    @GetMapping("/time-entries")
+    public String debugTimeEntries(Model model) {
+        try {
+            List<TimeEntry> allTimeEntries = timeEntryRepository.findAll();
+            System.out.println("Total time entries in database: " + allTimeEntries.size());
+
+            for (TimeEntry entry : allTimeEntries) {
+                System.out.println("Time Entry ID: " + entry.getId() +
+                        ", Task: " + (entry.getTask() != null ? entry.getTask().getTitle() : "null") +
+                        ", User: " + (entry.getUser() != null ? entry.getUser().getUsername() : "null") +
+                        ", Start Time: " + entry.getStartTime() +
+                        ", End Time: " + entry.getEndTime());
+            }
+
+            model.addAttribute("allTimeEntries", allTimeEntries);
             return "debug";
         } catch (Exception e) {
             e.printStackTrace();
