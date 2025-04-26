@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/timeEntries") // Changed from "/api/time-entries"
+@RequestMapping({ "/api/time-entries", "/api/timeEntries" }) // Support both kebab and camel case URLs
 public class TimeEntryController {
     private static final Logger logger = LoggerFactory.getLogger(TimeEntryController.class);
 
