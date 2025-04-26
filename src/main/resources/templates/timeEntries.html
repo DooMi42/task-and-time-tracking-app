@@ -71,7 +71,8 @@
                     <tr th:each="entry : ${timeEntries}">
                         <td th:text="${entry.task.title}">Task Title</td>
                         <td th:text="${entry.description}">Description</td>
-                        <td th:text="${entry.date != null ? #temporals.format(entry.date, 'MMM dd, yyyy') : 'No date'}">
+                        <td
+                            th:text="${entry.startTime != null ? #temporals.format(entry.startTime, 'MMM dd, yyyy') : 'No date'}">
                             Date
                         </td>
                         <td
@@ -85,7 +86,7 @@
                         <td>
                             <button class="btn btn-sm btn-outline-primary edit-entry-btn" th:data-entry-id="${entry.id}"
                                 th:data-task-id="${entry.task.id}" th:data-description="${entry.description}"
-                                th:data-date="${#temporals.format(entry.date, 'yyyy-MM-dd')}"
+                                th:data-date="${#temporals.format(entry.startTime, 'yyyy-MM-dd')}"
                                 th:data-start-time="${#temporals.format(entry.startTime, 'HH:mm')}"
                                 th:data-end-time="${#temporals.format(entry.endTime, 'HH:mm')}">
                                 <i class="bi bi-pencil"></i>
