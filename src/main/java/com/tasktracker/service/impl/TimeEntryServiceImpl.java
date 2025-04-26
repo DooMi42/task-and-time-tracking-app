@@ -238,6 +238,7 @@ public class TimeEntryServiceImpl implements TimeEntryService {
     }
 
     @Override
+    @Transactional
     public TimeEntry createTimeEntryFromRequest(TimeEntryRequest request) {
         if (request == null || request.getTaskId() == null) {
             throw new IllegalArgumentException("Invalid request: missing task ID");
@@ -272,7 +273,8 @@ public class TimeEntryServiceImpl implements TimeEntryService {
             throw new IllegalArgumentException("Error parsing date/time: " + e.getMessage(), e);
         }
 
-        return timeEntry;
+        TimeEntry saved = timeEntryRepository.save(timeEntry);
+        return saved;
     }
 
     private TimeEntryDto mapToDto(TimeEntry timeEntry) {
