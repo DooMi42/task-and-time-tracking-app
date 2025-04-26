@@ -444,6 +444,67 @@
             });
         });
     </script>
+    <!-- Add the loadTasks function -->
+    <script>
+        function loadTasks() {
+            const taskContainer = document.querySelector('#taskContainer');
+            if (!taskContainer) return; // Not on tasks page
+
+            // Show loading indicator
+            taskContainer.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+            fetch('/api/tasks', {
+                method: 'GET',
+                credentials: 'include', // Important! Include cookies for session auth
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        // Get detailed error message from response
+                        return response.text().then(text => {
+                            try {
+                                // Try to parse as JSON for structured error
+                                const errorData = JSON.parse(text);
+                                throw new Error(errorData.error || `Server error: ${response.status}`);
+                            } catch (e) {
+                                // If not JSON, use text or status
+                                throw new Error(text || `Server error: ${response.status}`);
+                            }
+                        });
+                    }
+                    return response.json();
+                })
+                .then(tasks => {
+                    console.log('Tasks loaded:', tasks);
+                    renderTasks(tasks);
+                })
+                .catch(error => {
+                    console.error('Error loading tasks:', error);
+                    showErrorAlert(`Failed to load tasks: ${error.message}`, taskContainer);
+                });
+        }
+
+        // Helper function to display errors
+        function showErrorAlert(message, container) {
+            const alertElement = document.createElement('div');
+            alertElement.className = 'alert alert-danger alert-dismissible fade show';
+            alertElement.setAttribute('role', 'alert');
+            alertElement.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            // If container is specified, insert there; otherwise add to document body
+            if (container) {
+                container.innerHTML = '';
+                container.appendChild(alertElement);
+            } else {
+                document.body.insertBefore(alertElement, document.body.firstChild);
+            }
+        }
+    </script>
 </body>
 
 </html>

@@ -96,7 +96,10 @@ public class JwtTokenUtil {
     }
 
     public Key getSecretKey() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getSecretKey'");
+        return this.key;
+    }
+
+    public String getUsernameFromToken(String jwtToken) {
+        return extractUsername(jwtToken);
     }
 }

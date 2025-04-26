@@ -37,4 +37,18 @@ public class TaskDto {
     private Double totalSpentHours;
 
     private Long userId;
+
+    private String username;
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setDueDate(String dateString) {
+        if (dateString == null || dateString.trim().isEmpty()) {
+            this.dueDate = null;
+            return;
+        }
+        this.dueDate = LocalDate.parse(dateString);
+    }
 }

@@ -6,6 +6,7 @@ import com.tasktracker.model.User;
 import com.tasktracker.service.TaskService;
 import com.tasktracker.service.TimeEntryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -37,18 +38,13 @@ public class ViewController {
 
     @GetMapping("/tasks")
     public String tasks(Model model) {
-        // Remove the HttpServletRequest parameter if you don't need it
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
             return "redirect:/login";
         }
 
         String username = auth.getName();
         System.out.println("Loading tasks for user: " + username);
-
-        // Initialize empty collections to prevent NPEs
-        model.addAttribute("tasks", new ArrayList<>());
-        model.addAttribute("completedMap", new HashMap<>());
 
         try {
             // Get tasks from service
@@ -65,9 +61,13 @@ public class ViewController {
             // Add to model
             model.addAttribute("tasks", tasks);
             model.addAttribute("completedMap", completedMap);
+
         } catch (Exception e) {
+            System.err.println("Error loading tasks: " + e.getMessage());
             e.printStackTrace();
             model.addAttribute("errorMessage", "Failed to load tasks: " + e.getMessage());
+            model.addAttribute("tasks", new ArrayList<>());
+            model.addAttribute("completedMap", new HashMap<>());
         }
 
         // Always add a new task for the form
