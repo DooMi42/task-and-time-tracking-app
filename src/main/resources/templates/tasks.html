@@ -129,7 +129,8 @@
                                         th:data-task-id="${task.id}" th:data-task-title="${task.title}"
                                         th:data-task-description="${task.description}"
                                         th:data-task-due-date="${task.dueDate != null ? #temporals.format(task.dueDate, 'yyyy-MM-dd') : ''}"
-                                        th:data-task-status="${task.status}">
+                                        th:data-task-status="${task.status}" th:data-task-priority="${task.priority}"
+                                        th:data-task-estimated-hours="${task.estimatedHours}">
                                         <i class="bi bi-pencil"></i> Edit
                                     </button>
                                     <button class="btn btn-sm btn-outline-danger delete-task-btn"
@@ -314,19 +315,26 @@
                     const description = this.getAttribute('data-task-description');
                     const dueDate = this.getAttribute('data-task-due-date');
                     const status = this.getAttribute('data-task-status');
+                    const priority = this.getAttribute('data-task-priority');
+                    const estimatedHours = this.getAttribute('data-task-estimated-hours');
 
                     document.getElementById('editTaskForm').action = `/api/tasks/${taskId}`;
-                    document.getElementById('editTitle').value = title;
-                    document.getElementById('editDescription').value = description;
-                    document.getElementById('editDueDate').value = dueDate;
+                    document.getElementById('editTitle').value = title || '';
+                    document.getElementById('editDescription').value = description || '';
+                    document.getElementById('editDueDate').value = dueDate || '';
 
-                    // Set the status dropdown
-                    const statusSelect = document.getElementById('editStatus');
-                    if (statusSelect) {
-                        statusSelect.value = status;
+                    if (document.getElementById('editStatus')) {
+                        document.getElementById('editStatus').value = status || 'TODO';
                     }
 
-                    // Show the modal
+                    if (document.getElementById('editPriority')) {
+                        document.getElementById('editPriority').value = priority || 'LOW';
+                    }
+
+                    if (document.getElementById('editEstimatedHours')) {
+                        document.getElementById('editEstimatedHours').value = estimatedHours || '';
+                    }
+
                     new bootstrap.Modal(document.getElementById('editTaskModal')).show();
                 });
             });
@@ -448,6 +456,8 @@
                     const description = this.getAttribute('data-task-description');
                     const dueDate = this.getAttribute('data-task-due-date');
                     const status = this.getAttribute('data-task-status');
+                    const priority = this.getAttribute('data-task-priority');
+                    const estimatedHours = this.getAttribute('data-task-estimated-hours');
 
                     document.getElementById('editTaskForm').action = `/api/tasks/${taskId}`;
                     document.getElementById('editTitle').value = title || '';
@@ -457,6 +467,16 @@
                     const statusSelect = document.getElementById('editStatus');
                     if (statusSelect && status) {
                         statusSelect.value = status;
+                    }
+
+                    const prioritySelect = document.getElementById('editPriority');
+                    if (prioritySelect && priority) {
+                        prioritySelect.value = priority;
+                    }
+
+                    const estimatedHoursInput = document.getElementById('editEstimatedHours');
+                    if (estimatedHoursInput && estimatedHours) {
+                        estimatedHoursInput.value = estimatedHours;
                     }
 
                     new bootstrap.Modal(document.getElementById('editTaskModal')).show();
@@ -663,7 +683,9 @@
                                             data-task-title="${task.title || ''}"
                                             data-task-description="${task.description || ''}"
                                             data-task-due-date="${task.dueDate || ''}"
-                                            data-task-status="${task.status || 'TODO'}">
+                                            data-task-status="${task.status || 'TODO'}"
+                                            data-task-priority="${task.priority || 'LOW'}"
+                                            data-task-estimated-hours="${task.estimatedHours || ''}">
                                             <i class="bi bi-pencil"></i> Edit
                                         </button>
                                         <button class="btn btn-sm btn-outline-danger delete-task-btn" 
@@ -697,6 +719,8 @@
             const description = this.getAttribute('data-task-description');
             const dueDate = this.getAttribute('data-task-due-date');
             const status = this.getAttribute('data-task-status');
+            const priority = this.getAttribute('data-task-priority');
+            const estimatedHours = this.getAttribute('data-task-estimated-hours');
 
             document.getElementById('editTaskForm').action = `/api/tasks/${taskId}`;
             document.getElementById('editTitle').value = title || '';
@@ -706,6 +730,16 @@
             const statusSelect = document.getElementById('editStatus');
             if (statusSelect && status) {
                 statusSelect.value = status;
+            }
+
+            const prioritySelect = document.getElementById('editPriority');
+            if (prioritySelect && priority) {
+                prioritySelect.value = priority;
+            }
+
+            const estimatedHoursInput = document.getElementById('editEstimatedHours');
+            if (estimatedHoursInput && estimatedHours) {
+                estimatedHoursInput.value = estimatedHours;
             }
 
             new bootstrap.Modal(document.getElementById('editTaskModal')).show();

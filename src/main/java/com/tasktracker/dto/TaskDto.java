@@ -51,4 +51,12 @@ public class TaskDto {
         }
         this.dueDate = LocalDate.parse(dateString);
     }
+
+    public Double getEstimatedHours() {
+        return estimatedHours;
+    }
+
+    public void setEstimatedHours(Double estimatedHours) {
+        this.estimatedHours = estimatedHours;
+    }
 }
