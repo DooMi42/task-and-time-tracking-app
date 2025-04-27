@@ -250,9 +250,11 @@ public class TimeEntryServiceImpl implements TimeEntryService {
         User currentUser = userService.getCurrentUser();
 
         TimeEntry timeEntry = new TimeEntry();
-        timeEntry.setTask(task);
         timeEntry.setUser(currentUser);
         timeEntry.setDescription(request.getDescription());
+
+        // Associate the time entry with the task using the helper method
+        task.addTimeEntry(timeEntry);
 
         try {
             LocalDateTime startTime = parseDateTime(request.getStartTime());

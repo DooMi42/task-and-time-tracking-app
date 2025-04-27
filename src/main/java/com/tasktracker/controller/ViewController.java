@@ -91,7 +91,7 @@ public class ViewController {
                 TaskDto task = taskService.getTaskById(taskId);
                 entries = timeEntryService.getTimeEntriesByTaskId(taskId);
                 model.addAttribute("taskId", taskId);
-                model.addAttribute("selectedTaskId", taskId); // Add this line for dropdown selection
+                model.addAttribute("selectedTaskId", taskId);
                 model.addAttribute("taskTitle", task.getTitle());
             } else {
                 // Get all time entries for the user

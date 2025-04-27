@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -25,6 +26,7 @@ public class TimeEntry {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
+    @JsonBackReference
     private Task task;
 
     @ManyToOne(fetch = FetchType.LAZY)

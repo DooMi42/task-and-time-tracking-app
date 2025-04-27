@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.tasktracker.dto.UserDto;
 
 import jakarta.persistence.*;
@@ -53,6 +54,7 @@ public class Task {
     private Project project;
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private Set<TimeEntry> timeEntries = new HashSet<>();
 
     @CreationTimestamp
@@ -74,6 +76,16 @@ public class Task {
         return timeEntries.stream()
                 .mapToDouble(TimeEntry::getDurationInHours)
                 .sum();
+    }
+
+    public void addTimeEntry(TimeEntry timeEntry) {
+        timeEntries.add(timeEntry);
+        timeEntry.setTask(this);
+    }
+
+    public void removeTimeEntry(TimeEntry timeEntry) {
+        timeEntries.remove(timeEntry);
+        timeEntry.setTask(null);
     }
 
     public enum TaskStatus {
