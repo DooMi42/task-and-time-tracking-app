@@ -89,6 +89,18 @@
                                 Status: <span th:text="${task.status != null ? task.status : 'Not set'}">Status</span>
                             </p>
 
+                            <!-- Add priority and estimated hours -->
+                            <p class="card-text">
+                                Priority: <span class="badge"
+                                    th:classappend="${task.priority == 'HIGH' ? 'bg-danger' : (task.priority == 'MEDIUM' ? 'bg-warning' : 'bg-info')}"
+                                    th:text="${task.priority != null ? task.priority : 'LOW'}">Priority</span>
+                            </p>
+                            <p class="card-text" th:if="${task.estimatedHours != null}">
+                                <small class="text-muted">
+                                    Estimated: <span th:text="${task.estimatedHours}">0</span> hours
+                                </small>
+                            </p>
+
                             <!-- Safe handling of completedMap -->
                             <div class="d-flex justify-content-between align-items-center">
                                 <span th:switch="${task.status}">
@@ -173,6 +185,19 @@
                             <label for="dueDate" class="form-label">Due Date</label>
                             <input type="date" class="form-control" id="dueDate" name="dueDate" required>
                         </div>
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="HIGH">High</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="estimatedHours" class="form-label">Estimated Hours</label>
+                            <input type="number" class="form-control" id="estimatedHours" name="estimatedHours"
+                                step="0.1">
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -242,6 +267,50 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const taskForm = document.getElementById('addTaskForm');
+            if (taskForm) {
+                taskForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(this);
+
+                    const taskData = {
+                        title: formData.get('title'),
+                        description: formData.get('description'),
+                        dueDate: formData.get('dueDate'),
+                        status: 'TODO', // Default for new tasks
+                        priority: formData.get('priority'),
+                        estimatedHours: formData.get('estimatedHours') ? parseFloat(formData.get('estimatedHours')) : null
+                    };
+
+                    fetch('/api/tasks', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(taskData)
+                    })
+                        .then(response => {
+                            if (response.ok) {
+                                bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
+                                window.location.reload();
+                            } else {
+                                return response.text().then(text => {
+                                    console.error('Error creating task:', text);
+                                    alert('Failed to create task: ' + text);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Failed to create task: ' + error.message);
+                        });
+                });
+            }
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
             // Set up edit task buttons
             document.querySelectorAll('.edit-task-btn').forEach(button => {
                 button.addEventListener('click', function () {
@@ -298,7 +367,8 @@
                 description: formData.get('description'),
                 dueDate: formData.get('dueDate'),
                 status: formData.get('status'),
-                priority: formData.get('priority')
+                priority: formData.get('priority'),
+                estimatedHours: formData.get('estimatedHours') ? parseFloat(formData.get('estimatedHours')) : null
                 // timeEntries intentionally omitted
             };
 
@@ -558,6 +628,18 @@
                         statusBadge = '<span class="badge bg-secondary">Unknown</span>';
                 }
 
+                let priorityBadge;
+                switch (task.priority) {
+                    case 'HIGH':
+                        priorityBadge = '<span class="badge bg-danger">High</span>';
+                        break;
+                    case 'MEDIUM':
+                        priorityBadge = '<span class="badge bg-warning">Medium</span>';
+                        break;
+                    default:
+                        priorityBadge = '<span class="badge bg-info">Low</span>';
+                }
+
                 html += `
                     <div class="col-md-4 mb-4">
                         <div class="card h-100">
@@ -571,6 +653,12 @@
                                 </p>
                                 <p class="card-text">
                                     Status: ${task.status || 'Not set'}
+                                </p>
+                                <p class="card-text">
+                                    Priority: ${priorityBadge}
+                                </p>
+                                <p class="card-text">
+                                    ${task.estimatedHours ? 'Estimated: ' + task.estimatedHours + ' hours' : ''}
                                 </p>
                                 <div class="d-flex justify-content-between align-items-center">
                                     ${statusBadge}
