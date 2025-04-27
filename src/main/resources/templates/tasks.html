@@ -85,10 +85,6 @@
                             </p>
 
                             <!-- Safe handling of status -->
-                            <p class="card-text">
-                                Status: <span th:text="${task.status != null ? task.status : 'Not set'}">Status</span>
-                            </p>
-
                             <!-- Add priority and estimated hours -->
                             <p class="card-text">
                                 Priority: <span class="badge"
@@ -96,9 +92,8 @@
                                     th:text="${task.priority != null ? task.priority : 'LOW'}">Priority</span>
                             </p>
                             <p class="card-text" th:if="${task.estimatedHours != null}">
-                                <small class="text-muted">
-                                    Estimated: <span th:text="${task.estimatedHours}">0</span> hours
-                                </small>
+                                <i class="bi bi-hourglass-split"></i> <strong>Estimated: <span
+                                        th:text="${task.estimatedHours}">0</span> hours</strong>
                             </p>
 
                             <!-- Safe handling of completedMap -->
@@ -652,13 +647,10 @@
                                     </small>
                                 </p>
                                 <p class="card-text">
-                                    Status: ${task.status || 'Not set'}
-                                </p>
-                                <p class="card-text">
                                     Priority: ${priorityBadge}
                                 </p>
                                 <p class="card-text">
-                                    ${task.estimatedHours ? 'Estimated: ' + task.estimatedHours + ' hours' : ''}
+                                    ${task.estimatedHours ? '<i class="bi bi-hourglass-split"></i> <strong>Estimated: ' + task.estimatedHours + ' hours</strong>' : ''}
                                 </p>
                                 <div class="d-flex justify-content-between align-items-center">
                                     ${statusBadge}
