@@ -37,6 +37,8 @@
                         <th>Title</th>
                         <th>User</th>
                         <th>Status</th>
+                        <th>Priority</th>
+                        <th>Estimated Hours</th>
                         <th>Due Date</th>
                     </tr>
                 </thead>
@@ -46,6 +48,15 @@
                         <td th:text="${task.title}">Task Title</td>
                         <td th:text="${task.user != null ? task.user.username : 'No User'}">username</td>
                         <td th:text="${task.status}">status</td>
+                        <td>
+                            <span class="badge"
+                                th:classappend="${task.priority == 'HIGH' ? 'bg-danger' : (task.priority == 'MEDIUM' ? 'bg-warning' : 'bg-info')}"
+                                th:text="${task.priority != null ? task.priority : 'LOW'}">
+                                priority
+                            </span>
+                        </td>
+                        <td th:text="${task.estimatedHours != null ? task.estimatedHours + ' hrs' : 'Not set'}">
+                            estimated hours</td>
                         <td th:text="${task.dueDate}">due date</td>
                     </tr>
                 </tbody>
