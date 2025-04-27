@@ -81,7 +81,7 @@
         <div th:if="${tasks != null && !tasks.empty}">
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                 <div th:each="task : ${tasks}" class="col-md-4 mb-4">
-                    <div class="card h-100">
+                    <div class="card h-100" th:data-estimated-hours="${task.estimatedHours}">
                         <div class="card-body">
                             <h5 class="card-title" th:text="${task.title != null ? task.title : 'Untitled Task'}">Task
                                 Title</h5>
@@ -109,8 +109,8 @@
                             <!-- Replace the existing estimated hours paragraph with this more visible version -->
                             <p class="card-text estimated-hours">
                                 <i class="bi bi-hourglass-split"></i>
-                                <strong>Estimated: <span
-                                        th:text="${task.estimatedHours != null ? task.estimatedHours + ' hours' : 'Not set'}">Not
+                                <strong>Est.: <span
+                                        th:text="${task.estimatedHours != null ? task.estimatedHours + ' h' : 'Not set'}">Not
                                         set</span></strong>
                             </p>
 
@@ -409,7 +409,7 @@
                 // timeEntries intentionally omitted
             };
 
-            console.log("Sending task data:", taskData); // Debug line
+            console.log("Sending task data:", taskData);
 
             fetch(`/api/tasks/${taskId}`, {
                 method: 'PUT',
@@ -478,6 +478,56 @@
                     .catch(error => {
                         console.error('Error:', error);
                     });
+            });
+        });
+    </script>
+    <!-- Replace all edit button handlers with this consolidated version -->
+    <script>
+        function handleEditButtonClick() {
+            const taskId = this.getAttribute('data-task-id');
+            const title = this.getAttribute('data-task-title');
+            const description = this.getAttribute('data-task-description');
+            const dueDate = this.getAttribute('data-task-due-date');
+            const status = this.getAttribute('data-task-status');
+            const priority = this.getAttribute('data-task-priority');
+            const estimatedHours = this.getAttribute('data-task-estimated-hours');
+
+            console.log('Edit data:', { taskId, title, description, dueDate, status, priority, estimatedHours });
+
+            // Set form action and values
+            document.getElementById('editTaskForm').action = `/api/tasks/${taskId}`;
+            document.getElementById('editTitle').value = title || '';
+            document.getElementById('editDescription').value = description || '';
+            document.getElementById('editDueDate').value = dueDate || '';
+
+            // Set dropdown values
+            const statusSelect = document.getElementById('editStatus');
+            if (statusSelect) {
+                statusSelect.value = status || 'TODO';
+            }
+
+            const prioritySelect = document.getElementById('editPriority');
+            if (prioritySelect) {
+                prioritySelect.value = priority || 'LOW';
+            }
+
+            // Set estimated hours with proper null handling
+            const estimatedHoursInput = document.getElementById('editEstimatedHours');
+            if (estimatedHoursInput) {
+                estimatedHoursInput.value = estimatedHours !== undefined && estimatedHours !== null && estimatedHours !== 'null' ? estimatedHours : '';
+            }
+
+            new bootstrap.Modal(document.getElementById('editTaskModal')).show();
+        }
+
+        // Make sure this runs once on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            // Attach edit handler to all edit buttons
+            document.querySelectorAll('.edit-task-btn').forEach(button => {
+                // Remove any existing handlers to avoid duplicates
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+                newButton.addEventListener('click', handleEditButtonClick);
             });
         });
     </script>

@@ -117,6 +117,17 @@ public class TaskController {
         dto.setDescription(task.getDescription());
         dto.setStatus(task.getStatus());
         dto.setPriority(task.getPriority());
+        dto.setEstimatedHours(task.getEstimatedHours()); // Add this line
+
+        // Add this section for total spent hours
+        Double totalSpentHours = null;
+        if (task.getTimeEntries() != null && !task.getTimeEntries().isEmpty()) {
+            totalSpentHours = task.getTimeEntries().stream()
+                    .filter(entry -> entry.getStartTime() != null && entry.getEndTime() != null)
+                    .mapToDouble(entry -> (double) entry.getDurationInMinutes() / 60)
+                    .sum();
+        }
+        dto.setTotalSpentHours(totalSpentHours);
 
         if (task.getDueDate() != null) {
             dto.setDueDate(task.getDueDate().toString());
