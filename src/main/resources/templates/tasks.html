@@ -9,6 +9,21 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
     <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}" />
+
+    <!-- Add this styling to make estimated hours more visible -->
+    <style>
+        .estimated-hours {
+            color: #495057;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .estimated-hours i {
+            margin-right: 5px;
+        }
+    </style>
 </head>
 
 <body>
@@ -91,9 +106,12 @@
                                     th:classappend="${task.priority == 'HIGH' ? 'bg-danger' : (task.priority == 'MEDIUM' ? 'bg-warning' : 'bg-info')}"
                                     th:text="${task.priority != null ? task.priority : 'LOW'}">Priority</span>
                             </p>
-                            <p class="card-text" th:if="${task.estimatedHours != null}">
-                                <i class="bi bi-hourglass-split"></i> <strong>Estimated: <span
-                                        th:text="${task.estimatedHours}">0</span> hours</strong>
+                            <!-- Replace the existing estimated hours paragraph with this more visible version -->
+                            <p class="card-text estimated-hours">
+                                <i class="bi bi-hourglass-split"></i>
+                                <strong>Estimated: <span
+                                        th:text="${task.estimatedHours != null ? task.estimatedHours : 'Not set'}">0</span>
+                                    hours</strong>
                             </p>
 
                             <!-- Safe handling of completedMap -->
@@ -307,7 +325,12 @@
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Set up edit task buttons
+            // Remove any existing handlers to prevent duplicates
+            document.querySelectorAll('.edit-task-btn').forEach(button => {
+                button.replaceWith(button.cloneNode(true));
+            });
+
+            // Add a single, comprehensive handler
             document.querySelectorAll('.edit-task-btn').forEach(button => {
                 button.addEventListener('click', function () {
                     const taskId = this.getAttribute('data-task-id');
@@ -318,11 +341,17 @@
                     const priority = this.getAttribute('data-task-priority');
                     const estimatedHours = this.getAttribute('data-task-estimated-hours');
 
+                    console.log('Editing task with hours:', estimatedHours); // Debug line
+
+                    // Set form action
                     document.getElementById('editTaskForm').action = `/api/tasks/${taskId}`;
+
+                    // Set form values
                     document.getElementById('editTitle').value = title || '';
                     document.getElementById('editDescription').value = description || '';
                     document.getElementById('editDueDate').value = dueDate || '';
 
+                    // Set dropdowns and numeric fields
                     if (document.getElementById('editStatus')) {
                         document.getElementById('editStatus').value = status || 'TODO';
                     }
@@ -331,10 +360,13 @@
                         document.getElementById('editPriority').value = priority || 'LOW';
                     }
 
-                    if (document.getElementById('editEstimatedHours')) {
-                        document.getElementById('editEstimatedHours').value = estimatedHours || '';
+                    // Ensure estimated hours is properly set
+                    const hoursInput = document.getElementById('editEstimatedHours');
+                    if (hoursInput) {
+                        hoursInput.value = estimatedHours || '';
                     }
 
+                    // Show the modal
                     new bootstrap.Modal(document.getElementById('editTaskModal')).show();
                 });
             });
@@ -374,6 +406,8 @@
                 estimatedHours: formData.get('estimatedHours') ? parseFloat(formData.get('estimatedHours')) : null
                 // timeEntries intentionally omitted
             };
+
+            console.log("Sending task data:", taskData); // Debug line
 
             fetch(`/api/tasks/${taskId}`, {
                 method: 'PUT',
@@ -669,8 +703,8 @@
                                 <p class="card-text">
                                     Priority: ${priorityBadge}
                                 </p>
-                                <p class="card-text">
-                                    ${task.estimatedHours ? '<i class="bi bi-hourglass-split"></i> <strong>Estimated: ' + task.estimatedHours + ' hours</strong>' : ''}
+                                <p class="card-text estimated-hours">
+                                    <i class="bi bi-hourglass-split"></i> <strong>Estimated: ${task.estimatedHours ? task.estimatedHours + ' hours' : 'Not set'}</strong>
                                 </p>
                                 <div class="d-flex justify-content-between align-items-center">
                                     ${statusBadge}
