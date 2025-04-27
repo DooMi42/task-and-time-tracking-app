@@ -57,6 +57,22 @@ public class Task {
     @JsonManagedReference
     private Set<TimeEntry> timeEntries = new HashSet<>();
 
+    // Helper method to manage the bidirectional relationship
+    public void addTimeEntry(TimeEntry timeEntry) {
+        if (timeEntries == null) {
+            timeEntries = new HashSet<>();
+        }
+        timeEntries.add(timeEntry);
+        timeEntry.setTask(this);
+    }
+
+    public void removeTimeEntry(TimeEntry timeEntry) {
+        if (timeEntries != null) {
+            timeEntries.remove(timeEntry);
+            timeEntry.setTask(null);
+        }
+    }
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -76,16 +92,6 @@ public class Task {
         return timeEntries.stream()
                 .mapToDouble(TimeEntry::getDurationInHours)
                 .sum();
-    }
-
-    public void addTimeEntry(TimeEntry timeEntry) {
-        timeEntries.add(timeEntry);
-        timeEntry.setTask(this);
-    }
-
-    public void removeTimeEntry(TimeEntry timeEntry) {
-        timeEntries.remove(timeEntry);
-        timeEntry.setTask(null);
     }
 
     public enum TaskStatus {

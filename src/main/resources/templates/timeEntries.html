@@ -256,8 +256,8 @@
                         body: JSON.stringify({
                             taskId: parseInt(taskId),
                             description: description,
-                            startTime: startDateTime,
-                            endTime: endDateTime
+                            ...(startTime ? { startTime: startDateTime } : {}),
+                            ...(endTime ? { endTime: endDateTime } : {})
                         })
                     })
                         .then(response => {

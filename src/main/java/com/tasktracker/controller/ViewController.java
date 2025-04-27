@@ -90,15 +90,16 @@ public class ViewController {
                 // Get time entries for the specific task
                 TaskDto task = taskService.getTaskById(taskId);
                 entries = timeEntryService.getTimeEntriesByTaskId(taskId);
+                model.addAttribute("timeEntries", entries); // Use "timeEntries" consistently
                 model.addAttribute("taskId", taskId);
                 model.addAttribute("selectedTaskId", taskId);
                 model.addAttribute("taskTitle", task.getTitle());
             } else {
                 // Get all time entries for the user
                 entries = timeEntryService.getTimeEntriesByUsername(username);
+                model.addAttribute("timeEntries", entries); // Use "timeEntries" consistently
             }
 
-            model.addAttribute("timeEntries", entries);
         } catch (Exception e) {
             e.printStackTrace();
             model.addAttribute("errorMessage", "Failed to load time entries: " + e.getMessage());

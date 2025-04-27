@@ -128,8 +128,14 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void deleteTask(Long id) {
-        Task task = findTaskById(id);
-        validateUserOwnsTask(task);
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + id));
+
+        // Clear the time entries collection to avoid FK constraint violation
+        if (task.getTimeEntries() != null) {
+            task.getTimeEntries().clear();
+        }
+
         taskRepository.delete(task);
     }
 
