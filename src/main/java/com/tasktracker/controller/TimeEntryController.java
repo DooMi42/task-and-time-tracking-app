@@ -51,43 +51,43 @@ public class TimeEntryController {
 
     @PostMapping
     public ResponseEntity<?> createTimeEntry(@RequestBody TimeEntryRequest request) {
-        logger.info("Received time entry request: {}", request);
-
         try {
-            // Basic validation
-            if (request == null || request.getTaskId() == null) {
-                logger.warn("Invalid request: missing task ID");
-                return ResponseEntity.badRequest()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(Collections.singletonMap("error", "Missing required task ID"));
+            logger.info("Creating time entry for task ID: {}", request.getTaskId());
+
+            // Validate request
+            if (request.getTaskId() == null) {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Task ID is required"));
             }
 
-            logger.info("Creating time entry - taskId: {}, description: {}, startTime: {}, endTime: {}",
-                    request.getTaskId(), request.getDescription(), request.getStartTime(), request.getEndTime());
-
-            // Create time entry using service
             TimeEntry timeEntry = timeEntryService.createTimeEntryFromRequest(request);
-            TimeEntry savedEntry = timeEntryService.saveTimeEntry(timeEntry);
 
-            logger.info("Successfully saved time entry with ID: {}", savedEntry.getId());
-
-            // Return a clean response
+            // Convert to response format
             Map<String, Object> response = new HashMap<>();
-            response.put("id", savedEntry.getId());
-            response.put("message", "Time entry created successfully");
-            return ResponseEntity.ok()
+            response.put("id", timeEntry.getId());
+            response.put("taskId", timeEntry.getTask().getId());
+            response.put("taskTitle", timeEntry.getTask().getTitle());
+            response.put("description", timeEntry.getDescription());
+            response.put("startTime", timeEntry.getStartTime());
+            response.put("endTime", timeEntry.getEndTime());
+            response.put("durationMinutes", timeEntry.getDurationInMinutes());
+
+            logger.info("Time entry created successfully with ID: {}", timeEntry.getId());
+
+            return ResponseEntity.status(HttpStatus.CREATED)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(response);
+        } catch (IllegalArgumentException e) {
+            logger.error("Bad request when creating time entry", e);
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("error", e.getMessage()));
+        } catch (EntityNotFoundException e) {
+            logger.error("Entity not found when creating time entry", e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", e.getMessage()));
         } catch (Exception e) {
-            // Handle exception here directly instead of throwing it
             logger.error("Error creating time entry", e);
-
-            Map<String, String> errorResponse = Collections.singletonMap(
-                    "error", "Failed to create time entry: " + e.getMessage());
-
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(errorResponse);
+                    .body(Collections.singletonMap("error", "Failed to create time entry: " + e.getMessage()));
         }
     }
 
