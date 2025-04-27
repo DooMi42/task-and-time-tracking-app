@@ -108,10 +108,9 @@
                             </p>
                             <!-- Replace the existing estimated hours paragraph with this more visible version -->
                             <p class="card-text estimated-hours">
-                                <i class="bi bi-hourglass-split"></i>
-                                <strong>Estimated: <span
-                                        th:text="${task.estimatedHours != null ? task.estimatedHours : 'Not set'}">0</span>
-                                    hours</strong>
+                                <i class="bi bi-hourglass-split"></i> <strong>Estimated: ${task.estimatedHours !== null
+                                    && task.estimatedHours !== undefined ? task.estimatedHours + ' hours' : 'Not
+                                    set'}</strong>
                             </p>
 
                             <!-- Safe handling of completedMap -->
@@ -361,9 +360,11 @@
                     }
 
                     // Ensure estimated hours is properly set
-                    const hoursInput = document.getElementById('editEstimatedHours');
-                    if (hoursInput) {
-                        hoursInput.value = estimatedHours || '';
+                    const estimatedHoursInput = document.getElementById('editEstimatedHours');
+                    if (estimatedHoursInput) {
+                        // Always set the value, even if it's empty
+                        estimatedHoursInput.value = estimatedHours !== undefined && estimatedHours !== null ? estimatedHours : '';
+                        console.log('Setting estimated hours to:', estimatedHoursInput.value); // Debug line
                     }
 
                     // Show the modal
@@ -509,8 +510,10 @@
                     }
 
                     const estimatedHoursInput = document.getElementById('editEstimatedHours');
-                    if (estimatedHoursInput && estimatedHours) {
-                        estimatedHoursInput.value = estimatedHours;
+                    if (estimatedHoursInput) {
+                        // Always set the value, even if it's empty
+                        estimatedHoursInput.value = estimatedHours !== undefined && estimatedHours !== null ? estimatedHours : '';
+                        console.log('Setting estimated hours to:', estimatedHoursInput.value); // Debug line
                     }
 
                     new bootstrap.Modal(document.getElementById('editTaskModal')).show();
@@ -719,7 +722,7 @@
                                             data-task-due-date="${task.dueDate || ''}"
                                             data-task-status="${task.status || 'TODO'}"
                                             data-task-priority="${task.priority || 'LOW'}"
-                                            data-task-estimated-hours="${task.estimatedHours || ''}">
+                                            data-task-estimated-hours="${task.estimatedHours !== undefined && task.estimatedHours !== null ? task.estimatedHours : ''}">
                                             <i class="bi bi-pencil"></i> Edit
                                         </button>
                                         <button class="btn btn-sm btn-outline-danger delete-task-btn" 
@@ -772,8 +775,10 @@
             }
 
             const estimatedHoursInput = document.getElementById('editEstimatedHours');
-            if (estimatedHoursInput && estimatedHours) {
-                estimatedHoursInput.value = estimatedHours;
+            if (estimatedHoursInput) {
+                // Always set the value, even if it's empty
+                estimatedHoursInput.value = estimatedHours !== undefined && estimatedHours !== null ? estimatedHours : '';
+                console.log('Setting estimated hours to:', estimatedHoursInput.value); // Debug line
             }
 
             new bootstrap.Modal(document.getElementById('editTaskModal')).show();
