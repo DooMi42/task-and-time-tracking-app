@@ -111,32 +111,52 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskDto updateTask(Long id, TaskDto taskDto) {
-        Task task = findTaskById(id);
-        validateUserOwnsTask(task);
+        try {
+            Task task = findTaskById(id);
+            validateUserOwnsTask(task);
 
-        task.setTitle(taskDto.getTitle());
-        task.setDescription(taskDto.getDescription());
-        task.setStatus(taskDto.getStatus());
-        task.setPriority(taskDto.getPriority());
-        task.setDueDate(taskDto.getDueDate());
-        task.setEstimatedHours(taskDto.getEstimatedHours());
+            task.setTitle(taskDto.getTitle());
+            task.setDescription(taskDto.getDescription());
+            task.setStatus(taskDto.getStatus());
+            task.setPriority(taskDto.getPriority());
+            task.setDueDate(taskDto.getDueDate());
+            task.setEstimatedHours(taskDto.getEstimatedHours());
 
-        Task updatedTask = taskRepository.save(task);
-        return mapToDto(updatedTask);
+            // Explicitly initialize the time entries collection before updating
+            if (task.getTimeEntries() != null) {
+                task.getTimeEntries().size(); // This will initialize the collection
+            }
+
+            Task updatedTask = taskRepository.save(task);
+            return mapToDto(updatedTask);
+        } catch (Exception e) {
+            logger.error("Error updating task with ID {}: {}", id, e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Override
     @Transactional
     public void deleteTask(Long id) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + id));
+        try {
+            Task task = taskRepository.findById(id)
+                    .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + id));
 
-        // Clear the time entries collection to avoid FK constraint violation
-        if (task.getTimeEntries() != null) {
-            task.getTimeEntries().clear();
+            validateUserOwnsTask(task);
+
+            // Explicitly load and clear time entries before deletion
+            if (task.getTimeEntries() != null) {
+                logger.info("Task has {} time entries that will be removed", task.getTimeEntries().size());
+                task.clearTimeEntries();
+                taskRepository.saveAndFlush(task); // Save changes before deletion
+            }
+
+            taskRepository.delete(task);
+            logger.info("Task with ID {} was successfully deleted", id);
+        } catch (Exception e) {
+            logger.error("Error deleting task with ID {}: {}", id, e.getMessage(), e);
+            throw e;
         }
-
-        taskRepository.delete(task);
     }
 
     @Override

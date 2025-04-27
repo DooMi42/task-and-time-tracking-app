@@ -53,24 +53,27 @@ public class Task {
     @JoinColumn(name = "project_id")
     private Project project;
 
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
     private Set<TimeEntry> timeEntries = new HashSet<>();
 
-    // Helper method to manage the bidirectional relationship
+    // Helper methods to manage the bidirectional relationship
     public void addTimeEntry(TimeEntry timeEntry) {
-        if (timeEntries == null) {
-            timeEntries = new HashSet<>();
-        }
         timeEntries.add(timeEntry);
         timeEntry.setTask(this);
     }
 
     public void removeTimeEntry(TimeEntry timeEntry) {
-        if (timeEntries != null) {
-            timeEntries.remove(timeEntry);
-            timeEntry.setTask(null);
+        timeEntries.remove(timeEntry);
+        timeEntry.setTask(null);
+    }
+
+    // Clear all time entries
+    public void clearTimeEntries() {
+        for (TimeEntry entry : new HashSet<>(timeEntries)) {
+            removeTimeEntry(entry);
         }
+        timeEntries.clear();
     }
 
     @CreationTimestamp

@@ -256,7 +256,9 @@ public class TimeEntryServiceImpl implements TimeEntryService {
             TimeEntry timeEntry = new TimeEntry();
             timeEntry.setUser(currentUser);
             timeEntry.setDescription(request.getDescription());
-            timeEntry.setTask(task); // Explicitly set the task
+
+            // Use the helper method in Task to maintain the bidirectional relationship
+            task.addTimeEntry(timeEntry);
 
             // Parse date times with better error handling
             LocalDateTime startTime = parseDateTime(request.getStartTime());
