@@ -91,13 +91,11 @@
                                 th:data-end-time="${#temporals.format(entry.endTime, 'HH:mm')}">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <form class="d-inline" th:action="@{/api/time-entries/{id}(id=${entry.id})}" method="post">
-                                <input type="hidden" name="_method" value="DELETE">
-                                <button type="submit" class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('Are you sure you want to delete this time entry?')">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
+                            <button class="btn btn-sm btn-outline-danger delete-entry-btn"
+                                th:data-entry-id="${entry.id}"
+                                onclick="return confirm('Are you sure you want to delete this time entry?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 </tbody>
@@ -313,6 +311,82 @@
             }
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const editForm = document.getElementById('editTimeEntryForm');
+            if (editForm) {
+                editForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const entryId = document.getElementById('editTimeEntryForm').action.split('/').pop();
+                    const taskId = document.getElementById('editTaskId').value;
+                    const description = document.getElementById('editDescription').value;
+                    const date = document.getElementById('editDate').value;
+                    const startTime = document.getElementById('editStartTime').value;
+                    const endTime = document.getElementById('editEndTime').value;
+
+                    // Create datetime strings
+                    const startDateTime = `${date}T${startTime}:00`;
+                    const endDateTime = `${date}T${endTime}:00`;
+
+                    fetch(`/api/time-entries/${entryId}`, {
+                        method: 'PUT',  // Use PUT directly instead of POST with _method
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id: entryId,
+                            taskId: parseInt(taskId),
+                            description: description,
+                            startTime: startDateTime,
+                            endTime: endDateTime
+                        })
+                    })
+                        .then(response => {
+                            if (response.ok) {
+                                bootstrap.Modal.getInstance(document.getElementById('editTimeEntryModal')).hide();
+                                window.location.reload();
+                            } else {
+                                return response.text().then(text => {
+                                    throw new Error(text || `Server error: ${response.status}`);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Failed to update time entry: ' + error.message);
+                        });
+                });
+            }
+
+            // Replace delete form buttons with JavaScript fetch handlers
+            document.querySelectorAll('.delete-entry-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const entryId = this.getAttribute('data-entry-id');
+
+                    if (confirm('Are you sure you want to delete this time entry?')) {
+                        fetch(`/api/time-entries/${entryId}`, {
+                            method: 'DELETE'  // Use DELETE directly
+                        })
+                            .then(response => {
+                                if (response.ok) {
+                                    window.location.reload();
+                                } else {
+                                    return response.text().then(text => {
+                                        throw new Error(text || `Server error: ${response.status}`);
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Failed to delete time entry: ' + error.message);
+                            });
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>
+````

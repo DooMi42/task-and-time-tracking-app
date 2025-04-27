@@ -1,5 +1,6 @@
 package com.tasktracker.controller;
 
+import com.tasktracker.dto.TaskDto;
 import com.tasktracker.model.Task;
 import com.tasktracker.model.TimeEntry;
 import com.tasktracker.model.User;
@@ -81,18 +82,23 @@ public class ViewController {
         String username = auth.getName();
 
         try {
+            List<Task> tasks = taskService.getTasksByUsername(username);
+            model.addAttribute("tasks", tasks);
+
             List<TimeEntry> entries;
             if (taskId != null) {
+                // Get time entries for the specific task
+                TaskDto task = taskService.getTaskById(taskId);
                 entries = timeEntryService.getTimeEntriesByTaskId(taskId);
                 model.addAttribute("taskId", taskId);
-                model.addAttribute("taskTitle", taskService.getTaskById(taskId).getTitle());
+                model.addAttribute("selectedTaskId", taskId); // Add this line for dropdown selection
+                model.addAttribute("taskTitle", task.getTitle());
             } else {
+                // Get all time entries for the user
                 entries = timeEntryService.getTimeEntriesByUsername(username);
             }
 
             model.addAttribute("timeEntries", entries);
-            model.addAttribute("newTimeEntry", new TimeEntry());
-            model.addAttribute("tasks", taskService.getTasksByUsername(username));
         } catch (Exception e) {
             e.printStackTrace();
             model.addAttribute("errorMessage", "Failed to load time entries: " + e.getMessage());
