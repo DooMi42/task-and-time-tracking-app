@@ -86,8 +86,9 @@ public class TimeEntryController {
                     .body(Collections.singletonMap("error", e.getMessage()));
         } catch (Exception e) {
             logger.error("Error creating time entry", e);
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error occurred";
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("error", "Failed to create time entry: " + e.getMessage()));
+                    .body(Collections.singletonMap("error", "Failed to create time entry: " + errorMessage));
         }
     }
 

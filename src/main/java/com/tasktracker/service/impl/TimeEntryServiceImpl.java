@@ -240,23 +240,25 @@ public class TimeEntryServiceImpl implements TimeEntryService {
     @Override
     @Transactional
     public TimeEntry createTimeEntryFromRequest(TimeEntryRequest request) {
-        if (request == null || request.getTaskId() == null) {
-            throw new IllegalArgumentException("Invalid request: missing task ID");
-        }
-
-        Task task = taskRepository.findById(request.getTaskId())
-                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + request.getTaskId()));
-
-        User currentUser = userService.getCurrentUser();
-
-        TimeEntry timeEntry = new TimeEntry();
-        timeEntry.setUser(currentUser);
-        timeEntry.setDescription(request.getDescription());
-
-        // Associate the time entry with the task using the helper method
-        task.addTimeEntry(timeEntry);
-
         try {
+            if (request == null || request.getTaskId() == null) {
+                throw new IllegalArgumentException("Invalid request: missing task ID");
+            }
+
+            Task task = taskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + request.getTaskId()));
+
+            User currentUser = userService.getCurrentUser();
+            if (currentUser == null) {
+                throw new IllegalStateException("No authenticated user found");
+            }
+
+            TimeEntry timeEntry = new TimeEntry();
+            timeEntry.setUser(currentUser);
+            timeEntry.setDescription(request.getDescription());
+            timeEntry.setTask(task); // Explicitly set the task
+
+            // Parse date times with better error handling
             LocalDateTime startTime = parseDateTime(request.getStartTime());
             LocalDateTime endTime = parseDateTime(request.getEndTime());
 
@@ -271,12 +273,15 @@ public class TimeEntryServiceImpl implements TimeEntryService {
 
             timeEntry.setStartTime(startTime);
             timeEntry.setEndTime(endTime);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error parsing date/time: " + e.getMessage(), e);
-        }
 
-        TimeEntry saved = timeEntryRepository.save(timeEntry);
-        return saved;
+            // Save the entry
+            TimeEntry saved = timeEntryRepository.save(timeEntry);
+            logger.info("Successfully created time entry with ID: {}", saved.getId());
+            return saved;
+        } catch (Exception e) {
+            logger.error("Error creating time entry: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     private TimeEntryDto mapToDto(TimeEntry timeEntry) {
