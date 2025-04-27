@@ -257,8 +257,8 @@ public class TimeEntryServiceImpl implements TimeEntryService {
             timeEntry.setUser(currentUser);
             timeEntry.setDescription(request.getDescription());
 
-            // Use the helper method in Task to maintain the bidirectional relationship
-            task.addTimeEntry(timeEntry);
+            // IMPORTANT: Explicitly set the task - was missing
+            timeEntry.setTask(task);
 
             // Parse date times with better error handling
             LocalDateTime startTime = parseDateTime(request.getStartTime());
@@ -282,6 +282,10 @@ public class TimeEntryServiceImpl implements TimeEntryService {
             return saved;
         } catch (Exception e) {
             logger.error("Error creating time entry: {}", e.getMessage(), e);
+            // Provide a meaningful error message if the original is null
+            if (e.getMessage() == null) {
+                throw new RuntimeException("Unknown error occurred during time entry creation", e);
+            }
             throw e;
         }
     }

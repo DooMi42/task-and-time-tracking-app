@@ -138,25 +138,23 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void deleteTask(Long id) {
-        try {
-            Task task = taskRepository.findById(id)
-                    .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + id));
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found with id: " + id));
 
-            validateUserOwnsTask(task);
+        validateUserOwnsTask(task);
 
-            // Explicitly load and clear time entries before deletion
-            if (task.getTimeEntries() != null) {
-                logger.info("Task has {} time entries that will be removed", task.getTimeEntries().size());
-                task.clearTimeEntries();
-                taskRepository.saveAndFlush(task); // Save changes before deletion
-            }
+        // First, handle time entries to avoid FK constraint violations
+        if (task.getTimeEntries() != null) {
+            // Either clear the collection (if using CascadeType.ALL, orphanRemoval=true)
+            task.getTimeEntries().clear();
 
-            taskRepository.delete(task);
-            logger.info("Task with ID {} was successfully deleted", id);
-        } catch (Exception e) {
-            logger.error("Error deleting task with ID {}: {}", id, e.getMessage(), e);
-            throw e;
+            // Or delete each time entry explicitly
+            // timeEntryRepository.deleteAll(task.getTimeEntries());
         }
+
+        // Then delete the task
+        taskRepository.delete(task);
+        logger.info("Successfully deleted task with ID: {}", id);
     }
 
     @Override

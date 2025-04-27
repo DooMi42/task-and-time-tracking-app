@@ -53,7 +53,7 @@ public class Task {
     @JoinColumn(name = "project_id")
     private Project project;
 
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private Set<TimeEntry> timeEntries = new HashSet<>();
 
