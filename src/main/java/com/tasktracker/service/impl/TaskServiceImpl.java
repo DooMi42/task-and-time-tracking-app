@@ -111,28 +111,24 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskDto updateTask(Long id, TaskDto taskDto) {
-        try {
-            Task task = findTaskById(id);
-            validateUserOwnsTask(task);
+        Task existingTask = findTaskById(id);
+        validateUserOwnsTask(existingTask);
 
-            task.setTitle(taskDto.getTitle());
-            task.setDescription(taskDto.getDescription());
-            task.setStatus(taskDto.getStatus());
-            task.setPriority(taskDto.getPriority());
-            task.setDueDate(taskDto.getDueDate());
-            task.setEstimatedHours(taskDto.getEstimatedHours());
+        // Update fields but preserve relationships
+        existingTask.setTitle(taskDto.getTitle());
+        existingTask.setDescription(taskDto.getDescription());
+        existingTask.setStatus(taskDto.getStatus());
+        existingTask.setPriority(taskDto.getPriority());
+        existingTask.setDueDate(taskDto.getDueDate());
+        existingTask.setEstimatedHours(taskDto.getEstimatedHours());
 
-            // Explicitly initialize the time entries collection before updating
-            if (task.getTimeEntries() != null) {
-                task.getTimeEntries().size(); // This will initialize the collection
-            }
-
-            Task updatedTask = taskRepository.save(task);
-            return mapToDto(updatedTask);
-        } catch (Exception e) {
-            logger.error("Error updating task with ID {}: {}", id, e.getMessage(), e);
-            throw e;
+        // Force initialization of time entries to avoid detached entity issues
+        if (existingTask.getTimeEntries() != null) {
+            existingTask.getTimeEntries().size(); // This forces Hibernate to load the collection
         }
+
+        Task updatedTask = taskRepository.save(existingTask);
+        return mapToDto(updatedTask);
     }
 
     @Override
@@ -143,16 +139,12 @@ public class TaskServiceImpl implements TaskService {
 
         validateUserOwnsTask(task);
 
-        // First, handle time entries to avoid FK constraint violations
+        // Initialize and clear time entries to trigger orphanRemoval
         if (task.getTimeEntries() != null) {
-            // Either clear the collection (if using CascadeType.ALL, orphanRemoval=true)
-            task.getTimeEntries().clear();
-
-            // Or delete each time entry explicitly
-            // timeEntryRepository.deleteAll(task.getTimeEntries());
+            task.getTimeEntries().size(); // Force initialization
+            task.clearTimeEntries();
         }
 
-        // Then delete the task
         taskRepository.delete(task);
         logger.info("Successfully deleted task with ID: {}", id);
     }
